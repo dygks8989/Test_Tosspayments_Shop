@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 실패 | WEARHOUSE</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+  <main class="result" id="result"></main>
+  <div id="footer"></div>
+
+  <script src="js/products.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    renderHeader();
+    renderFooter();
+
+    const params = new URLSearchParams(location.search);
+
+    document.getElementById("result").innerHTML = `
+      <div class="icon fail">×</div>
+      <h1>결제에 실패했습니다</h1>
+      <p class="desc">${esc(params.get("message")) || "결제 처리 중 문제가 발생했습니다."}</p>
+      <dl>
+        <div><dt>에러 코드</dt><dd>${esc(params.get("code")) || "-"}</dd></div>
+        <div><dt>주문번호</dt><dd>${esc(params.get("orderId")) || "-"}</dd></div>
+      </dl>
+      <div class="actions"><a class="btn btn-line" href="index.html">홈으로</a><a class="btn btn-black" href="checkout.html">다시 결제하기</a></div>`;
+  </script>
+</body>
+</html>

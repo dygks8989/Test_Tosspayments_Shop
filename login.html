@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 | WEARHOUSE</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+  <main class="auth">
+    <h1>LOGIN</h1>
+    <p class="sub">WEARHOUSE 회원 로그인</p>
+    <form id="loginForm" novalidate>
+      <label for="email">이메일</label>
+      <input type="email" id="email" autocomplete="email" placeholder="example@email.com" required>
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="비밀번호" required>
+      <label class="check"><input type="checkbox" id="keep"> 로그인 상태 유지</label>
+      <p class="error" id="error"></p>
+      <button type="submit" class="btn btn-black">로그인</button>
+    </form>
+    <div class="links"><a href="signup.html">회원가입</a><a href="#" onclick="toast('준비 중인 기능입니다.'); return false;">아이디 · 비밀번호 찾기</a></div>
+    <p class="divider">또는</p>
+    <div class="social">
+      <button type="button" class="kakao" onclick="toast('소셜 로그인은 퍼블리싱 화면만 제공됩니다.')">카카오로 시작하기</button>
+      <button type="button" onclick="toast('소셜 로그인은 퍼블리싱 화면만 제공됩니다.')">Apple로 시작하기</button>
+    </div>
+  </main>
+  <div id="footer"></div>
+
+  <script src="js/products.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    renderHeader();
+    renderFooter();
+
+    // 로그인 후 돌아갈 페이지 (같은 사이트의 .html 만 허용)
+    const next = new URLSearchParams(location.search).get("next");
+    const target = /^[a-z]+\.html$/.test(next || "") ? next : "index.html";
+    if (Auth.current()) location.replace(target);
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const error = document.getElementById("error");
+      if (!email || !password) return (error.textContent = "이메일과 비밀번호를 입력해주세요.");
+      try {
+        await Auth.login(email, password);
+        location.href = target;
+      } catch (err) {
+        error.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

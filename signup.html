@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 | WEARHOUSE</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+  <main class="auth">
+    <h1>JOIN</h1>
+    <p class="sub">가입하고 첫 구매 쿠폰 받아가세요</p>
+    <form id="signupForm" novalidate>
+      <label for="name">이름</label>
+      <input type="text" id="name" autocomplete="name" placeholder="이름" required>
+      <label for="email">이메일</label>
+      <input type="email" id="email" autocomplete="email" placeholder="example@email.com" required>
+      <label for="phone">휴대폰 번호</label>
+      <input type="tel" id="phone" autocomplete="tel" inputmode="numeric" placeholder="'-' 없이 숫자만" required>
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" autocomplete="new-password" placeholder="영문, 숫자 포함 8자 이상" required>
+      <label for="password2">비밀번호 확인</label>
+      <input type="password" id="password2" autocomplete="new-password" placeholder="비밀번호 재입력" required>
+      <label class="check"><input type="checkbox" id="agreeAll"> <b>전체 동의</b></label>
+      <label class="check"><input type="checkbox" class="agree" required> [필수] 이용약관 동의</label>
+      <label class="check"><input type="checkbox" class="agree" required> [필수] 개인정보 수집 및 이용 동의</label>
+      <label class="check"><input type="checkbox" class="agree"> [선택] 마케팅 정보 수신 동의</label>
+      <p class="error" id="error"></p>
+      <button type="submit" class="btn btn-black">가입하기</button>
+    </form>
+    <div class="links">이미 회원이신가요? <a href="login.html">로그인</a></div>
+  </main>
+  <div id="footer"></div>
+
+  <script src="js/products.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    renderHeader();
+    renderFooter();
+
+    const $ = (id) => document.getElementById(id);
+    const agrees = [...document.querySelectorAll(".agree")];
+    $("agreeAll").addEventListener("change", (e) => agrees.forEach((c) => (c.checked = e.target.checked)));
+    agrees.forEach((c) => c.addEventListener("change", () => ($("agreeAll").checked = agrees.every((a) => a.checked))));
+
+    $("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("name").value.trim();
+      const email = $("email").value.trim();
+      const phone = $("phone").value.replace(/\D/g, "");
+      const password = $("password").value;
+      const error = $("error");
+
+      if (!name) return (error.textContent = "이름을 입력해주세요.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return (error.textContent = "올바른 이메일을 입력해주세요.");
+      if (!/^01\d{8,9}$/.test(phone)) return (error.textContent = "올바른 휴대폰 번호를 입력해주세요.");
+      if (!/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password)) return (error.textContent = "비밀번호는 영문, 숫자 포함 8자 이상이어야 합니다.");
+      if (password !== $("password2").value) return (error.textContent = "비밀번호가 일치하지 않습니다.");
+      if (agrees.some((a) => a.required && !a.checked)) return (error.textContent = "필수 약관에 동의해주세요.");
+
+      try {
+        await Auth.signup({ name, email, phone, password });
+        location.href = "mypage.html?welcome=1";
+      } catch (err) {
+        error.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

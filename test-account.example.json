@@ -1,0 +1,7 @@
+{
+  "_comment": "로컬 테스트용 계정 (signup.html 에서 가입 후 사용). 브라우저 localStorage 에만 저장됩니다.",
+  "name": "테스트",
+  "email": "tester@wearhouse.test",
+  "phone": "01000000000",
+  "password": "testpass1234"
+}
