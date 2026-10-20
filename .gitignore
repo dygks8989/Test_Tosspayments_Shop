@@ -7,3 +7,7 @@ node_modules/
 # Claude Code local settings (launch.json is shared)
 .claude/*
 !.claude/launch.json
+
+# Vercel
+.vercel/
+.vercel-tools/
