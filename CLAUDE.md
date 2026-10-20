@@ -36,7 +36,7 @@ npx serve -l 5500
 `index.html`(상의)·`shoes.html`·`pants.html`은 마크업이 동일하고 `<body data-cat="tops|shoes|pants">`만 다르다. `shop.js`가 `data-cat`을 읽어 `CATEGORIES`/`PRODUCTS`에서 렌더링한다. 카테고리를 추가하려면 `CATEGORIES`, `PRODUCTS`, `DETAILS`, `product.js`의 `SIZE_TABLES`를 모두 수정하고 HTML 파일을 복제한다.
 
 ### 상품 데이터와 이미지
-상품 id 접두사가 카테고리를 뜻한다(T=상의, S=신발, P=바지). 이미지는 `images/{id}.jpg`(800×960, Unsplash 무료 라이선스)로 고정 매핑되며, 원본 Unsplash 사진 ID 목록은 README에 있다. 상품을 추가하면 같은 규칙으로 이미지를 넣고 README 목록도 갱신한다.
+상품 id 접두사가 카테고리를 뜻한다(T=상의, S=신발, P=바지). 이미지 원본은 `images/{id}.jpg`(800×960, Unsplash 무료 라이선스)이고, 실제 화면은 Supabase Storage 공개 버킷 `product-images/{id}.jpg`를 쓴다(`products.image_path`에 전체 URL 저장). 원본 Unsplash 사진 ID 목록은 README에 있다. 상품을 추가하면 같은 규칙으로 파일을 버킷에 올리고 `products` 행을 넣고 README 목록도 갱신한다.
 
 ### 상태 저장 (Supabase, 프로젝트 `wearhouse` / ref `hgtuzlcknccfuycewpia`, 서울)
 회원·상품·재고·장바구니·좋아요·주문·리뷰는 모두 Supabase DB에 있다. 테이블은 `profiles`, `products`, `product_sizes`(재고), `cart_items`, `likes`, `orders`, `order_items`(주문 당시 가격·이름 스냅샷), `order_events`(상태 기록), `reviews`. 모든 테이블에 RLS가 켜져 있고, 주문·재고·결제 관련 쓰기는 브라우저에서 불가능하다(읽기만 본인 것에 한해 허용).
@@ -59,7 +59,7 @@ npx serve -l 5500
 
 ## Supabase 연동 규칙
 
-요구사항은 `PRD.md`가 기준이다. 남은 일: 상품 이미지를 Supabase Storage로 이전(지금은 `images/` 로컬 파일을 `products.image_path`로 가리킴), 대시보드에서 "Confirm email" 끄기·유출 비밀번호 보호 켜기.
+요구사항은 `PRD.md`가 기준이다. 남은 일(대시보드에서만 가능): "Confirm email" 끄기, 유출 비밀번호 보호 켜기.
 
 - 비로그인 장바구니는 만들지 않는다. 담기·좋아요·결제 등은 "로그인이 필요한 서비스입니다" 알림 후 `login.html?next=`로 보내고, 로그인하면 원래 페이지로 복귀한다.
 - 토스 승인/취소 API와 시크릿 키는 Supabase Edge Function에서만 쓴다. 브라우저 코드에는 publishable 키와 토스 클라이언트 키만 둔다.
