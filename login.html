@@ -30,29 +30,34 @@
   </main>
   <div id="footer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/products.js"></script>
   <script src="js/common.js"></script>
   <script>
-    renderHeader();
-    renderFooter();
+    boot(() => {
+      renderHeader();
+      renderFooter();
 
-    // 로그인 후 돌아갈 페이지 (같은 사이트의 .html 만 허용)
-    const next = new URLSearchParams(location.search).get("next");
-    const target = /^[a-z]+\.html$/.test(next || "") ? next : "index.html";
-    if (Auth.current()) location.replace(target);
+      // 로그인 후 원래 보던 페이지로 복귀
+      const target = nextTarget();
+      if (Auth.current()) location.replace(target);
 
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-      const error = document.getElementById("error");
-      if (!email || !password) return (error.textContent = "이메일과 비밀번호를 입력해주세요.");
-      try {
-        await Auth.login(email, password);
-        location.href = target;
-      } catch (err) {
-        error.textContent = err.message;
-      }
+      document.querySelector(".links a[href='signup.html']").href = "signup.html" + location.search;
+
+      document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const error = document.getElementById("error");
+        if (!email || !password) return (error.textContent = "이메일과 비밀번호를 입력해주세요.");
+        try {
+          await Auth.login(email, password);
+          location.href = target;
+        } catch (err) {
+          error.textContent = err.message;
+        }
+      });
     });
   </script>
 </body>

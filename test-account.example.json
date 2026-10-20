@@ -1,5 +1,5 @@
 {
-  "_comment": "로컬 테스트용 계정 (signup.html 에서 가입 후 사용). 브라우저 localStorage 에만 저장됩니다.",
+  "_comment": "테스트 계정 예시 (signup.html 에서 가입 후 사용). 실제 Supabase 회원으로 저장되므로 이메일은 실존 형식이어야 합니다.",
   "name": "테스트",
   "email": "tester@wearhouse.test",
   "phone": "01000000000",

@@ -1,10 +1,9 @@
 /* 상품 상세 페이지 — product.html?id=T001 */
-const product = findProduct(new URLSearchParams(location.search).get("id"));
 const root = document.getElementById("detail");
 const sel = { size: null, qty: 1 };
-
-renderHeader(product?.cat);
-renderFooter();
+let product = null;
+let reviews = [];
+let reviewSort = "latest";
 
 /* 카테고리별 사이즈표 */
 const SIZE_TABLES = {
@@ -16,21 +15,60 @@ const SIZE_TABLES = {
            rows: [["S", 100, 37, 32, 24], ["M", 102, 39, 33, 25], ["L", 104, 41, 34, 26], ["XL", 106, 43, 35, 27]] },
 };
 
-/* 후기 더미 데이터 */
-const REVIEW_TEXTS = [
-  "사이즈 정사이즈로 잘 맞아요. 재질도 생각보다 탄탄하고 마감이 깔끔합니다.",
-  "색감이 사진이랑 거의 똑같아요. 데일리로 입기 좋아서 하나 더 살 생각입니다.",
-  "배송 빨랐고 포장도 꼼꼼했어요. 가격 대비 만족도 높습니다.",
-  "핏이 예쁘게 떨어져요. 한 치수 크게 살까 고민했는데 정사이즈가 맞았네요.",
-  "세탁 후에도 변형이 거의 없어요. 재구매 의사 있습니다.",
-];
-const REVIEWERS = ["패션러버", "데일리룩", "옷잘알", "주말쇼핑", "미니멀리스트"];
+boot(async () => {
+  product = findProduct(new URLSearchParams(location.search).get("id"));
+  renderHeader(product?.cat);
+  renderFooter();
 
-if (!product) {
-  root.innerHTML = `<p class="empty">존재하지 않는 상품입니다.<br><br><a href="index.html" style="text-decoration:underline">홈으로</a></p>`;
-} else {
+  if (!product) {
+    root.innerHTML = `<p class="empty">존재하지 않는 상품입니다.<br><br><a href="index.html" style="text-decoration:underline">홈으로</a></p>`;
+    return;
+  }
   document.title = `${product.name} | WEARHOUSE`;
+  await loadReviews();
   render();
+});
+
+async function loadReviews() {
+  const { data, error } = await sb.from("reviews").select("*").eq("product_id", product.id).limit(200);
+  if (error) throw error;
+  reviews = data;
+}
+
+function sortedReviews() {
+  const list = [...reviews];
+  list.sort(reviewSort === "rating"
+    ? (a, b) => b.rating - a.rating || b.created_at.localeCompare(a.created_at)
+    : (a, b) => b.created_at.localeCompare(a.created_at));
+  return list;
+}
+
+function reviewPhotoUrl(path) {
+  return sb.storage.from("review-photos").getPublicUrl(path).data.publicUrl;
+}
+
+function reviewSection() {
+  const p = product;
+  const dist = [5, 4, 3, 2, 1].map((n) => ({ n, c: reviews.filter((r) => r.rating === n).length }));
+  const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "-";
+  return `
+    <h2>후기 <small>★ ${avg} / 5 · ${reviews.length.toLocaleString()}개</small></h2>
+    ${reviews.length ? `
+    <div class="rv-summary">
+      ${dist.map((d) => `<div class="rv-bar"><span>${d.n}점</span><i><b style="width:${(d.c / reviews.length) * 100}%"></b></i><span>${d.c}</span></div>`).join("")}
+    </div>
+    <div class="rv-sort">
+      <button type="button" data-rsort="latest" class="${reviewSort === "latest" ? "active" : ""}">최신순</button>
+      <button type="button" data-rsort="rating" class="${reviewSort === "rating" ? "active" : ""}">별점순</button>
+    </div>
+    <ul class="reviews">
+      ${sortedReviews().map((r) => `
+        <li>
+          <p class="r-head"><span class="star">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span> <b>${esc(r.author_name)}</b> · ${new Date(r.created_at).toLocaleDateString("ko-KR")}</p>
+          <p>${esc(r.content)}</p>
+          ${r.photos.length ? `<div class="rv-photos">${r.photos.map((ph) => `<img src="${esc(reviewPhotoUrl(ph))}" alt="후기 사진" loading="lazy">`).join("")}</div>` : ""}
+        </li>`).join("")}
+    </ul>` : `<p class="empty">아직 작성된 후기가 없습니다.<br>배송완료된 구매 상품은 마이페이지 주문 내역에서 후기를 쓸 수 있어요.</p>`}`;
 }
 
 function render() {
@@ -43,17 +81,18 @@ function render() {
     .sort((a, b) => (b.brand === p.brand) - (a.brand === p.brand))
     .slice(0, 5);
   const points = Math.floor(p.sale * 0.03);
+  const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "-";
 
   root.innerHTML = `
-    <nav class="breadcrumb"><a href="index.html">홈</a> › <a href="${cat.page}">${cat.label}</a> › <span>${p.sub}</span></nav>
+    <nav class="breadcrumb"><a href="index.html">홈</a> › <a href="${cat.page}">${cat.label}</a> › <span>${esc(p.sub)}</span></nav>
 
     <section class="pd">
       <div class="pd-gallery">${productImg(p)}</div>
 
       <div class="pd-info">
-        <a class="pd-brand" href="${cat.page}">${p.brand} ›</a>
-        <h1 class="pd-name">${p.name}</h1>
-        <p class="pd-meta"><span class="star">★</span> ${p.rating} · 후기 ${p.reviews.toLocaleString()}개 · ♥ ${(p.likes + (liked ? 1 : 0)).toLocaleString()}</p>
+        <a class="pd-brand" href="${cat.page}">${esc(p.brand)} ›</a>
+        <h1 class="pd-name">${esc(p.name)}</h1>
+        <p class="pd-meta"><span class="star">★</span> ${avg} · 후기 ${reviews.length.toLocaleString()}개 · ♥ ${p.likes.toLocaleString()}</p>
 
         <div class="pd-price">
           <del>${won(p.price)}</del>
@@ -68,12 +107,15 @@ function render() {
 
         <p class="opt-label">사이즈</p>
         <div class="sizes">
-          ${cat.sizes.map((s) => `<button type="button" class="size ${s === sel.size ? "active" : ""}" data-size="${s}">${s}</button>`).join("")}
+          ${cat.sizes.map((s) => {
+            const left = p.stock[s] ?? 0;
+            return `<button type="button" class="size ${s === sel.size ? "active" : ""}" data-size="${s}" ${left ? "" : "disabled"}>${s}${left ? "" : " (품절)"}</button>`;
+          }).join("")}
         </div>
 
         ${sel.size ? `
         <div class="pd-selected">
-          <span>${p.name} / ${sel.size}</span>
+          <span>${esc(p.name)} / ${esc(sel.size)}</span>
           <div class="qty">
             <button type="button" data-qty="-1" aria-label="수량 감소">−</button>
             <span>${sel.qty}</span>
@@ -94,15 +136,15 @@ function render() {
     <div class="tabs" id="tabs">
       <a href="#info" class="active">상품정보</a>
       <a href="#size">사이즈</a>
-      <a href="#review">후기 ${p.reviews.toLocaleString()}</a>
+      <a href="#review">후기 ${reviews.length.toLocaleString()}</a>
       <a href="#related">추천</a>
     </div>
 
     <section class="pd-section" id="info">
       <h2>상품정보</h2>
-      <img class="pd-detail-img" src="images/${p.id}.jpg" alt="" loading="lazy">
+      <img class="pd-detail-img" src="${esc(p.image)}" alt="" loading="lazy">
       <table class="spec">
-        <tr><th>품번</th><td>${p.id}-${p.brand.replace(/\W+/g, "").slice(0, 4)}</td><th>브랜드</th><td>${p.brand}</td></tr>
+        <tr><th>품번</th><td>${p.id}-${esc(p.brand.replace(/\W+/g, "").slice(0, 4))}</td><th>브랜드</th><td>${esc(p.brand)}</td></tr>
         <tr><th>소재</th><td>${d.material}</td><th>핏</th><td>${d.fit}</td></tr>
         <tr><th>시즌</th><td>${d.season}</td><th>세탁방법</th><td>${d.wash}</td></tr>
       </table>
@@ -119,16 +161,7 @@ function render() {
       <p class="hint">측정 방법에 따라 1~3cm 오차가 있을 수 있습니다.</p>
     </section>
 
-    <section class="pd-section" id="review">
-      <h2>후기 <small>★ ${p.rating} / 5</small></h2>
-      <ul class="reviews">
-        ${REVIEW_TEXTS.map((t, i) => `
-          <li>
-            <p class="r-head"><span class="star">${"★".repeat(5 - (i === 2 ? 1 : 0))}</span> <b>${REVIEWERS[i]}</b> · ${cat.sizes[i % cat.sizes.length]} 구매</p>
-            <p>${t}</p>
-          </li>`).join("")}
-      </ul>
-    </section>
+    <section class="pd-section" id="review">${reviewSection()}</section>
 
     <section class="pd-section" id="related">
       <h2>함께 보면 좋은 상품</h2>
@@ -137,17 +170,34 @@ function render() {
 }
 
 /* ---------- 이벤트 ---------- */
-root.addEventListener("click", (e) => {
+root.addEventListener("click", async (e) => {
+  if (!product) return;
   const t = e.target;
   if (t.closest("[data-size]")) { sel.size = t.closest("[data-size]").dataset.size; sel.qty = 1; return render(); }
-  if (t.closest("[data-qty]")) { sel.qty = Math.max(1, Math.min(10, sel.qty + Number(t.closest("[data-qty]").dataset.qty))); return render(); }
-  if (t.closest("[data-like]")) { e.preventDefault(); Likes.toggle(t.closest("[data-like]").dataset.like); return render(); }
-  if (t.id === "likeBtn") { toast(Likes.toggle(product.id) ? "좋아요에 추가했습니다." : "좋아요를 취소했습니다."); return render(); }
+  if (t.closest("[data-qty]")) {
+    const max = Math.min(10, product.stock[sel.size] ?? 1);
+    const next = sel.qty + Number(t.closest("[data-qty]").dataset.qty);
+    if (next > max) toast(`재고가 부족합니다. (남은 수량 ${product.stock[sel.size]}개)`);
+    sel.qty = Math.max(1, Math.min(max, next));
+    return render();
+  }
+  if (t.closest("[data-rsort]")) { reviewSort = t.closest("[data-rsort]").dataset.rsort; document.getElementById("review").innerHTML = reviewSection(); return; }
+  if (t.closest("[data-like]")) {
+    e.preventDefault();
+    await attempt(() => Likes.toggle(t.closest("[data-like]").dataset.like));
+    return render();
+  }
+  if (t.id === "likeBtn") {
+    const on = await attempt(() => Likes.toggle(product.id));
+    if (on !== undefined && on !== null) toast(on ? "좋아요에 추가했습니다." : "좋아요를 취소했습니다.");
+    return render();
+  }
   if (t.id === "cartBtn" || t.id === "buyBtn") {
+    if (!requireLogin()) return;
     if (!sel.size) return toast("사이즈를 선택해주세요.");
     if (t.id === "cartBtn") {
-      Cart.add(product.id, sel.size, sel.qty);
-      toast("장바구니에 담았습니다.");
+      const ok = await attempt(() => Cart.add(product.id, sel.size, sel.qty));
+      if (ok) toast("장바구니에 담았습니다.");
     } else {
       goCheckout([{ id: product.id, size: sel.size, qty: sel.qty }], false);
     }

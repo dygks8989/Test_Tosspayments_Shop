@@ -23,13 +23,13 @@
         <h2 class="section-title">주문자 정보</h2>
         <form class="form-grid" id="buyerForm" onsubmit="return false">
           <label for="name">이름</label>
-          <input id="name" value="홍길동" autocomplete="name" required>
+          <input id="name" autocomplete="name" required>
           <label for="phone">휴대폰 번호</label>
-          <input id="phone" value="01012345678" inputmode="numeric" autocomplete="tel" required>
+          <input id="phone" inputmode="numeric" autocomplete="tel" required>
           <label for="email">이메일</label>
-          <input id="email" type="email" value="customer@example.com" autocomplete="email">
+          <input id="email" type="email" autocomplete="email">
           <label for="address">배송지</label>
-          <input id="address" value="서울특별시 강남구 테헤란로 1" autocomplete="street-address">
+          <input id="address" placeholder="배송받을 주소" autocomplete="street-address" required>
           <label for="memo">배송 메모</label>
           <select id="memo">
             <option>문 앞에 놔주세요</option>
@@ -60,6 +60,8 @@
 
   <div id="footer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/products.js"></script>
   <script src="js/common.js"></script>
   <script src="js/checkout.js"></script>

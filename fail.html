@@ -12,13 +12,21 @@
   <main class="result" id="result"></main>
   <div id="footer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/products.js"></script>
   <script src="js/common.js"></script>
   <script>
+    const params = new URLSearchParams(location.search);
+
+    boot(() => {
     renderHeader();
     renderFooter();
 
-    const params = new URLSearchParams(location.search);
+    // 주문을 "결제 실패"로 기록 (로그인한 본인의 결제 대기 주문만 바뀐다)
+    if (Auth.current() && params.get("orderId")) {
+      callOrders({ action: "fail", orderId: params.get("orderId"), code: params.get("code"), message: params.get("message") }).catch(() => {});
+    }
 
     document.getElementById("result").innerHTML = `
       <div class="icon fail">×</div>
@@ -29,6 +37,7 @@
         <div><dt>주문번호</dt><dd>${esc(params.get("orderId")) || "-"}</dd></div>
       </dl>
       <div class="actions"><a class="btn btn-line" href="index.html">홈으로</a><a class="btn btn-black" href="checkout.html">다시 결제하기</a></div>`;
+    });
   </script>
 </body>
 </html>

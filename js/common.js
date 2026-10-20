@@ -1,12 +1,11 @@
-/* 공통: 헤더/푸터, 장바구니, 토스트 */
-const CART_KEY = "ws_cart";
+/* 공통: 로그인, 장바구니, 좋아요, 헤더/푸터, 토스트 (데이터는 Supabase에 저장) */
 const CHECKOUT_KEY = "ws_checkout";
 
 const won = (n) => n.toLocaleString("ko-KR") + "원";
 const discountRate = (p) => Math.round((1 - p.sale / p.price) * 100);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-/* ---------- storage (차단된 환경에서도 동작하도록 try/catch) ---------- */
+/* ---------- storage (결제 직전 임시 데이터용, 차단된 환경에서도 동작하도록 try/catch) ---------- */
 function load(store, key, fallback) {
   try { return JSON.parse(store.getItem(key)) ?? fallback; } catch { return fallback; }
 }
@@ -14,84 +13,158 @@ function save(store, key, value) {
   try { store.setItem(key, JSON.stringify(value)); } catch {}
 }
 
-/* ---------- cart ---------- */
-const Cart = {
-  get: () => load(localStorage, CART_KEY, []),
-  set(items) { save(localStorage, CART_KEY, items); renderCartCount(); },
-  add(id, size, qty) {
-    const items = Cart.get();
-    const found = items.find((i) => i.id === id && i.size === size);
-    if (found) found.qty += qty; else items.push({ id, size, qty });
-    Cart.set(items);
-  },
-  update(index, qty) {
-    const items = Cart.get();
-    if (qty < 1) items.splice(index, 1); else items[index].qty = qty;
-    Cart.set(items);
-  },
-  count: () => Cart.get().reduce((s, i) => s + i.qty, 0),
+/* ---------- auth (Supabase Auth) ---------- */
+const AUTH_ERRORS = {
+  "Invalid login credentials": "이메일 또는 비밀번호가 올바르지 않습니다.",
+  "User already registered": "이미 가입된 이메일입니다.",
+  "Email not confirmed": "이메일 인증이 완료되지 않았습니다.",
 };
+const authMsg = (e) => AUTH_ERRORS[e.message] || e.message;
 
-/* ---------- likes ---------- */
-const Likes = {
-  get: () => new Set(load(localStorage, "ws_likes", [])),
-  has: (id) => Likes.get().has(id),
-  toggle(id) {
-    const set = Likes.get();
-    set.has(id) ? set.delete(id) : set.add(id);
-    save(localStorage, "ws_likes", [...set]);
-    return set.has(id);
-  },
-};
-
-/*
- * ---------- auth (퍼블리싱용 목업) ----------
- * 회원 정보는 브라우저 localStorage 에만 저장됩니다. 비밀번호는 SHA-256 해시로만 보관합니다.
- * 실서비스에서는 반드시 서버 인증(세션/토큰)으로 교체하세요.
- */
 const Auth = {
-  users: () => load(localStorage, "ws_users", []),
-  current() {
-    const email = load(localStorage, "ws_session", null);
-    return Auth.users().find((u) => u.email === email) || null;
+  user: null, // { id, email, name, phone, address, joined }
+  async init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { Auth.user = null; return; }
+    const { data: prof } = await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+    Auth.user = {
+      id: session.user.id, email: session.user.email, joined: session.user.created_at,
+      name: prof?.name || session.user.email.split("@")[0], phone: prof?.phone || "", address: prof?.address || "",
+    };
   },
-  async hash(pw) {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
-    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  },
+  current: () => Auth.user,
   async signup({ name, email, phone, password }) {
-    const users = Auth.users();
-    if (users.some((u) => u.email === email)) throw new Error("이미 가입된 이메일입니다.");
-    users.push({ name, email, phone, pw: await Auth.hash(password), joined: new Date().toISOString() });
-    save(localStorage, "ws_users", users);
-    save(localStorage, "ws_session", email);
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, phone } } });
+    if (error) throw new Error(authMsg(error));
+    if (!data.session) throw new Error("가입은 완료되었지만 이메일 인증이 필요합니다. 메일함을 확인해주세요.");
   },
   async login(email, password) {
-    const user = Auth.users().find((u) => u.email === email);
-    if (!user || user.pw !== (await Auth.hash(password))) throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
-    save(localStorage, "ws_session", email);
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(authMsg(error));
   },
-  logout() {
-    try { localStorage.removeItem("ws_session"); } catch {}
+  async logout() {
+    await sb.auth.signOut();
+  },
+  async updateProfile({ name, phone, address }) {
+    const { error } = await sb.from("profiles").update({ name, phone, address }).eq("id", Auth.user.id);
+    if (error) throw error;
+    Object.assign(Auth.user, { name, phone, address });
   },
 };
 
-/* ---------- orders (결제 성공 시 기록) ---------- */
-const Orders = {
-  all: () => load(localStorage, "ws_orders", []),
-  add(order) {
-    const list = Orders.all().filter((o) => o.orderId !== order.orderId);
-    list.unshift(order);
-    save(localStorage, "ws_orders", list);
+/* 로그인이 필요한 기능: 안내 후 로그인 화면으로 보내고, 로그인하면 지금 페이지로 돌아온다 */
+function requireLogin() {
+  if (Auth.user) return true;
+  alert("로그인이 필요한 서비스입니다.");
+  const here = (location.pathname.split("/").pop() || "index.html") + location.search + location.hash;
+  location.href = "login.html?next=" + encodeURIComponent(here);
+  return false;
+}
+
+/* 로그인 후 돌아갈 주소 (같은 사이트의 .html 만 허용) */
+function nextTarget() {
+  const next = new URLSearchParams(location.search).get("next") || "";
+  return /^[a-z]+\.html(\?[\w=&%.\-]*)?(#[\w=\-]*)?$/.test(next) ? next : "index.html";
+}
+
+/* ---------- cart (로그인한 회원만, Supabase cart_items) ---------- */
+const Cart = {
+  items: [], // [{ id, size, qty }]
+  async load() {
+    const { data, error } = await sb.from("cart_items").select("product_id, size, qty").order("created_at");
+    if (error) throw error;
+    Cart.items = data.map((r) => ({ id: r.product_id, size: r.size, qty: r.qty }));
+    renderCartCount();
   },
-  mine() {
-    const user = Auth.current();
-    return Orders.all().filter((o) => (user ? o.email === user.email : !o.email));
+  get: () => Cart.items,
+  count: () => Cart.items.reduce((s, i) => s + i.qty, 0),
+  maxQty(id, size) {
+    return Math.min(99, findProduct(id)?.stock?.[size] ?? 0);
+  },
+  async add(id, size, qty) {
+    if (!requireLogin()) return false;
+    const found = Cart.items.find((i) => i.id === id && i.size === size);
+    const next = (found?.qty || 0) + qty;
+    const max = Cart.maxQty(id, size);
+    if (next > max) throw new Error(max ? `재고가 부족합니다. (남은 수량 ${max}개)` : "품절된 사이즈입니다.");
+    const { error } = await sb.from("cart_items").upsert({ user_id: Auth.user.id, product_id: id, size, qty: next }, { onConflict: "user_id,product_id,size" });
+    if (error) throw error;
+    if (found) found.qty = next; else Cart.items.push({ id, size, qty: next });
+    renderCartCount();
+    return true;
+  },
+  async update(index, qty) {
+    const it = Cart.items[index];
+    if (!it) return;
+    if (qty < 1) {
+      const { error } = await sb.from("cart_items").delete().eq("product_id", it.id).eq("size", it.size);
+      if (error) throw error;
+      Cart.items.splice(index, 1);
+    } else {
+      const max = Cart.maxQty(it.id, it.size);
+      if (qty > max) throw new Error(`재고가 부족합니다. (남은 수량 ${max}개)`);
+      const { error } = await sb.from("cart_items").update({ qty }).eq("product_id", it.id).eq("size", it.size);
+      if (error) throw error;
+      it.qty = qty;
+    }
+    renderCartCount();
   },
 };
+
+/* ---------- likes (로그인한 회원만, Supabase likes) ---------- */
+const Likes = {
+  ids: new Set(),
+  async load() {
+    const { data, error } = await sb.from("likes").select("product_id");
+    if (error) throw error;
+    Likes.ids = new Set(data.map((r) => r.product_id));
+  },
+  get: () => Likes.ids,
+  has: (id) => Likes.ids.has(id),
+  /* 좋아요 상태를 반대로 바꾸고, 바뀐 상태(true=좋아요)를 돌려준다. 로그인 안 했으면 null */
+  async toggle(id) {
+    if (!requireLogin()) return null;
+    const p = findProduct(id);
+    if (Likes.ids.has(id)) {
+      const { error } = await sb.from("likes").delete().eq("product_id", id);
+      if (error) throw error;
+      Likes.ids.delete(id);
+      if (p) p.likes = Math.max(0, p.likes - 1);
+    } else {
+      const { error } = await sb.from("likes").insert({ product_id: id });
+      if (error) throw error;
+      Likes.ids.add(id);
+      if (p) p.likes += 1;
+    }
+    return Likes.ids.has(id);
+  },
+};
+
+/* 페이지 시작 전에 로그인 상태 / 상품 / 장바구니 / 좋아요를 준비한다 */
+const App = {
+  ready: (async () => {
+    await Auth.init();
+    await Promise.all([loadProducts(), Auth.user ? Cart.load() : null, Auth.user ? Likes.load() : null]);
+  })(),
+};
+
+/* 페이지 스크립트 진입점: 준비가 끝나면 main 실행, 실패하면 안내문 표시 */
+function boot(main) {
+  App.ready.then(main).catch((err) => {
+    console.error(err);
+    const el = document.querySelector("main") || document.body;
+    el.innerHTML = `<p class="empty">데이터를 불러오지 못했습니다.<br>잠시 후 새로고침 해주세요.</p>`;
+  });
+}
+
+/* 서버 작업 중 오류가 나면 토스트로 보여준다 */
+async function attempt(fn) {
+  try { return await fn(); } catch (err) { toast(err.message || "처리 중 오류가 발생했습니다."); return undefined; }
+}
 
 /* 결제할 상품 목록 → checkout.html 로 이동 */
 function goCheckout(items, fromCart) {
+  if (!requireLogin()) return;
   save(sessionStorage, CHECKOUT_KEY, { items, fromCart });
   location.href = "checkout.html";
 }
@@ -115,11 +188,11 @@ function productCard(p, rank) {
         </button>
       </div>
       <div class="card-info">
-        <p class="card-brand">${p.brand}</p>
-        <p class="card-name">${p.name}</p>
+        <p class="card-brand">${esc(p.brand)}</p>
+        <p class="card-name">${esc(p.name)}</p>
         <p class="card-price"><span class="discount">${discountRate(p)}%</span>${won(p.sale)}</p>
-        <p class="card-meta"><span><span class="star">★</span> ${p.rating}</span><span>리뷰 ${p.reviews.toLocaleString()}</span><span>♥ ${(p.likes + (liked ? 1 : 0)).toLocaleString()}</span></p>
-        ${p.badge ? `<span class="badge">${p.badge}</span>` : ""}
+        <p class="card-meta"><span><span class="star">★</span> ${p.reviews ? p.rating : "-"}</span><span>리뷰 ${p.reviews.toLocaleString()}</span><span>♥ ${p.likes.toLocaleString()}</span></p>
+        ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
       </div>
     </a>`;
 }
@@ -132,7 +205,7 @@ function renderHeader(activeCat) {
   const user = Auth.current();
   const authLinks = user
     ? `<a href="mypage.html" class="hide-m"><b>${esc(user.name)}</b>님</a>
-       <a href="#" class="hide-m" onclick="Auth.logout(); location.reload(); return false;">로그아웃</a>`
+       <a href="#" class="hide-m" id="logoutLink">로그아웃</a>`
     : `<a href="login.html" class="hide-m">로그인</a>
        <a href="signup.html" class="hide-m">회원가입</a>`;
   document.getElementById("header").innerHTML = `
@@ -156,6 +229,11 @@ function renderHeader(activeCat) {
       </div>
       <nav class="gnb"><ul class="inner">${nav}</ul></nav>
     </header>`;
+  document.getElementById("logoutLink")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    await Auth.logout();
+    location.href = "index.html";
+  });
   renderCartCount();
 }
 
@@ -206,6 +284,7 @@ function ensureDrawer() {
 }
 
 function openDrawer() {
+  if (!requireLogin()) return;
   ensureDrawer();
   renderDrawer();
   document.getElementById("drawer").classList.add("open");
@@ -230,9 +309,9 @@ function renderDrawer() {
     <div class="cart-item">
       <div class="thumb">${productImg(i.product)}</div>
       <div>
-        <p class="brand">${i.product.brand}</p>
-        <p class="name">${i.product.name}</p>
-        <p class="opt">옵션: ${i.size}</p>
+        <p class="brand">${esc(i.product.brand)}</p>
+        <p class="name">${esc(i.product.name)}</p>
+        <p class="opt">옵션: ${esc(i.size)}</p>
         <div class="qty">
           <button type="button" onclick="changeQty(${idx}, ${i.qty - 1})" aria-label="수량 감소">−</button>
           <span>${i.qty}</span>
@@ -253,8 +332,8 @@ function renderDrawer() {
     <button type="button" class="btn btn-black" onclick="checkoutCart()">${won(total)} 구매하기</button>`;
 }
 
-function changeQty(idx, qty) {
-  Cart.update(idx, qty);
+async function changeQty(idx, qty) {
+  await attempt(() => Cart.update(idx, qty));
   renderDrawer();
 }
 

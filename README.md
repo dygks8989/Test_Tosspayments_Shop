@@ -26,16 +26,15 @@ npx serve -l 5500
 ```
 → http://localhost:5500
 
-## 회원 기능 (목업)
-- 회원 정보·주문 내역·좋아요·장바구니는 **브라우저 localStorage**에만 저장됩니다 (비밀번호는 SHA-256 해시).
-- 로컬 테스트용 계정 예시: `test-account.example.json` (회원가입 화면에서 이 값으로 가입).
-- 실서비스에서는 서버 인증/DB로 교체해야 합니다.
+## 회원 · 주문 (Supabase)
+- 회원·장바구니·좋아요·주문·후기는 Supabase DB에 저장됩니다. 로그인하지 않으면 담기·좋아요·결제를 할 수 없습니다.
+- 가입 화면에서 이메일 인증 없이 가입하려면 Supabase 대시보드 > Authentication > Sign In / Providers > Email 에서 "Confirm email"을 끄세요.
+- 배송 상태는 관리자 페이지가 없으므로 Supabase 화면에서 `orders.status`를 직접 바꿉니다.
 
 ## 토스페이먼츠
 - SDK: `https://js.tosspayments.com/v2/standard` (결제위젯 v2)
 - `js/checkout.js`의 `TOSS_CLIENT_KEY`는 문서용 **공개 테스트 키**입니다. 내 상점의 결제위젯 클라이언트 키(`test_gck_...`)로 바꾸세요.
-- 이 프로젝트는 **결제 인증(결제창)까지**입니다. 실제 결제를 확정하려면 서버에서 시크릿 키로
-  `POST https://api.tosspayments.com/v1/payments/confirm` 을 호출해야 합니다 (10분 안에 호출하지 않으면 만료).
+- 결제 승인·취소는 Supabase Edge Function `orders`(소스: `supabase/functions/orders/index.ts`)가 시크릿 키로 처리합니다. 내 상점 키를 쓰려면 함수 시크릿 `TOSS_SECRET_KEY`를 설정하세요.
 
 ## 이미지 출처
 `images/*.jpg` 는 [Unsplash](https://unsplash.com) 무료 라이선스 사진입니다 (상업적 사용 가능, 출처 표기 권장).

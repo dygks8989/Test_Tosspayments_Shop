@@ -328,3 +328,42 @@ ul { list-style: none; }
   .spec th { width: 84px; }
   .my-stats { gap: 20px; }
 }
+
+/* ---- Supabase 연동 추가 UI: 품절 사이즈, 후기, 주문 상세 ---- */
+.size:disabled { color: var(--gray-300); background: var(--gray-100, #f5f5f5); text-decoration: line-through; cursor: not-allowed; }
+.btn-sm { height: 36px; padding: 0 16px; font-size: 13px; margin-top: 6px; }
+.rv-summary { margin: 12px 0; max-width: 360px; }
+.rv-bar { display: grid; grid-template-columns: 36px 1fr 28px; gap: 8px; align-items: center; font-size: 12px; color: var(--gray-500); margin: 3px 0; }
+.rv-bar i { display: block; height: 6px; background: var(--gray-200); }
+.rv-bar b { display: block; height: 100%; background: var(--black); }
+.rv-sort { display: flex; gap: 12px; margin: 12px 0 0; font-size: 13px; }
+.rv-sort button { color: var(--gray-500); }
+.rv-sort button.active { color: var(--black); font-weight: 700; }
+.rv-photos { display: flex; gap: 6px; margin-top: 8px; }
+.rv-photos img { width: 80px; height: 80px; object-fit: cover; }
+.rv-actions { margin-top: 6px; font-size: 12px; color: var(--gray-500); }
+.review-form { display: grid; gap: 8px; margin-top: 10px; padding: 14px; background: var(--gray-100, #f5f5f5); }
+.review-form textarea, .cancel-form textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--gray-200); font: inherit; }
+.review-form select, .cancel-form select { height: 38px; border: 1px solid var(--gray-200); padding: 0 8px; }
+.my-filters { margin: 14px 0 6px; flex-wrap: wrap; }
+.pager { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 20px; font-size: 13px; }
+.pager button { width: 32px; height: 32px; border: 1px solid var(--gray-200); }
+.pager button:disabled { color: var(--gray-300); }
+.order .status.off { color: var(--gray-500); }
+.back { margin-bottom: 8px; font-size: 13px; }
+.my-panel h2 small { font-size: 13px; color: var(--blue); margin-left: 6px; }
+.od-meta { margin: 14px 0; font-size: 13px; }
+.od-meta div { display: flex; gap: 12px; padding: 4px 0; }
+.od-meta dt { width: 70px; color: var(--gray-500); }
+.od-title { font-size: 15px; font-weight: 800; margin: 26px 0 8px; }
+.od-events { font-size: 13px; }
+.od-events li { padding: 5px 0; color: var(--gray-500); }
+.od-events li span { margin-right: 10px; }
+.od-events li b { color: var(--black); }
+.od-events li em { font-style: normal; }
+.od-actions { margin-top: 24px; }
+.cancel-form { display: grid; gap: 8px; margin-top: 12px; max-width: 420px; }
+.profile-form { display: grid; gap: 6px; max-width: 420px; margin-top: 16px; }
+.profile-form label { font-size: 12px; font-weight: 700; margin-top: 8px; }
+.profile-form input { height: 42px; border: 1px solid var(--gray-200); padding: 0 12px; }
+.profile-form .btn { margin-top: 14px; }
