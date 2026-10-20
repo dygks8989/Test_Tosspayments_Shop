@@ -52,6 +52,7 @@ npx serve -l 5500
 - 각 HTML의 `<!--SEO:HEAD|NAV|GRID|CONTENT|DETAIL|FOOT-->` 마커 사이는 생성기가 덮어쓴다. 직접 고치지 말고 생성기를 고친다. 마커를 지우지 않는다.
 - 생성물: `product-{id}.html`(상품 정적 페이지, 상세는 이쪽이 정식 주소), `about.html`, `faq.html`, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`, `products.json`. `product.html?id=`는 noindex이고 정적 페이지로 이동시킨다. `vercel.json`은 비공개 페이지에 X-Robots-Tag noindex를 건다.
 - 정적 텍스트(FAQ·요약)와 JSON-LD는 같은 문구여야 한다. 사이트에 구현된 정책(무료배송, 7일 환불 등)만 쓰고, 데모 쇼핑몰이라는 고지를 유지한다. 리뷰가 없으면 aggregateRating을 넣지 않는다.
+- Search Console 소유권 확인 파일 `google1a348e269ff5406c.html`은 삭제하지 않는다(삭제하면 확인이 풀림).
 - `SIZE_TABLES`는 `js/products.js`에 있고 상세 페이지와 생성기가 같이 쓴다.
 
 상품 상세는 예전에 목록 위 모달이었다가 `product.html`로 분리됐다. `css/style.css`의 `.modal*` 규칙 대부분은 그 잔재이고, 지금은 `.modal-total`만 상세 페이지에서 재사용한다.
