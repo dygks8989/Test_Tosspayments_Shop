@@ -1,4 +1,4 @@
-# RPD: WEARHOUSE Supabase 연동
+# PRD: WEARHOUSE Supabase 연동
 
 현재 localStorage/sessionStorage 목업으로 동작하는 쇼핑몰을 Supabase(Auth, Postgres, Storage, Edge Functions) 기반으로 전환한다. 이 문서는 요구사항, 데이터 모델, 정책, 구현 순서를 정의한다.
 
