@@ -1,22 +1,12 @@
-/* 상품 상세 페이지 — product.html?id=T001 */
+/* 상품 상세 페이지 — product-T001.html (SEO 정적 페이지, tools/seo-build.mjs 가 생성) / product.html?id=T001 은 정적 페이지로 이동 */
 const root = document.getElementById("detail");
 const sel = { size: null, qty: 1 };
 let product = null;
 let reviews = [];
 let reviewSort = "latest";
 
-/* 카테고리별 사이즈표 */
-const SIZE_TABLES = {
-  tops:  { head: ["사이즈", "총장", "어깨너비", "가슴단면", "소매길이"],
-           rows: [["S", 68, 50, 54, 21], ["M", 70, 52, 56, 22], ["L", 72, 54, 58, 23], ["XL", 74, 56, 60, 24], ["2XL", 76, 58, 62, 25]] },
-  shoes: { head: ["사이즈", "발길이(mm)", "발볼", "굽높이(cm)"],
-           rows: [["230", 230, "보통", 3], ["240", 240, "보통", 3], ["250", 250, "보통", 3], ["260", 260, "보통", 3.2], ["270", 270, "보통", 3.2], ["280", 280, "보통", 3.2]] },
-  pants: { head: ["사이즈", "총장", "허리단면", "허벅지단면", "밑단단면"],
-           rows: [["S", 100, 37, 32, 24], ["M", 102, 39, 33, 25], ["L", 104, 41, 34, 26], ["XL", 106, 43, 35, 27]] },
-};
-
 boot(async () => {
-  product = findProduct(new URLSearchParams(location.search).get("id"));
+  product = findProduct(document.body.dataset.id || new URLSearchParams(location.search).get("id"));
   renderHeader(product?.cat);
   renderFooter();
 
@@ -24,7 +14,7 @@ boot(async () => {
     root.innerHTML = `<p class="empty">존재하지 않는 상품입니다.<br><br><a href="index.html" style="text-decoration:underline">홈으로</a></p>`;
     return;
   }
-  document.title = `${product.name} | WEARHOUSE`;
+  document.title = `${product.brand} ${product.name} | WEARHOUSE`;
   await loadReviews();
   render();
 });

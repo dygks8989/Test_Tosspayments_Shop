@@ -1,0 +1,82 @@
+# WEARHOUSE robots.txt — 검색엔진과 AI 크롤러(GEO)를 모두 환영합니다.
+# 로그인·결제 페이지는 noindex 메타/헤더로 색인에서 제외합니다.
+User-agent: *
+Allow: /
+
+# OpenAI (학습)
+User-agent: GPTBot
+Allow: /
+
+# OpenAI (ChatGPT 검색)
+User-agent: OAI-SearchBot
+Allow: /
+
+# OpenAI (사용자 요청 시 방문)
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic (학습)
+User-agent: ClaudeBot
+Allow: /
+
+# Anthropic (Claude 검색)
+User-agent: Claude-SearchBot
+Allow: /
+
+# Anthropic (사용자 요청 시 방문)
+User-agent: Claude-User
+Allow: /
+
+# Google (Gemini 등 AI 학습/그라운딩 제어)
+User-agent: Google-Extended
+Allow: /
+
+# Google (AI 개요 제어 등)
+User-agent: GoogleOther
+Allow: /
+
+# Perplexity (검색)
+User-agent: PerplexityBot
+Allow: /
+
+# Perplexity (사용자 요청 시 방문)
+User-agent: Perplexity-User
+Allow: /
+
+# Apple (AI 학습 제어)
+User-agent: Applebot-Extended
+Allow: /
+
+# Apple (Siri·Spotlight)
+User-agent: Applebot
+Allow: /
+
+# Microsoft Bing
+User-agent: Bingbot
+Allow: /
+
+# Meta
+User-agent: meta-externalagent
+Allow: /
+
+# Common Crawl
+User-agent: CCBot
+Allow: /
+
+# Amazon
+User-agent: Amazonbot
+Allow: /
+
+# Naver
+User-agent: Yeti
+Allow: /
+
+# Daum/Kakao
+User-agent: Daumoa
+Allow: /
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+
+Sitemap: https://testtosspaymentsshop-xi.vercel.app/sitemap.xml

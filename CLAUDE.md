@@ -47,6 +47,13 @@ npx serve -l 5500
 - 리뷰 작성자 이름(김*수)은 트리거가 서버에서 채운다. 사진은 Storage 버킷 `review-photos`(공개 읽기, 본인 폴더만 업로드).
 - 좋아요 수는 `products.like_count`(트리거 동기화), 리뷰 평균·개수는 `product_stats` 뷰(security_invoker).
 
+### SEO / AEO / GEO (정적 산출물)
+화면은 JS가 그리므로 검색·AI 크롤러용 정적 HTML을 `tools/seo-build.mjs`가 만든다: `node tools/seo-build.mjs`(Supabase 공개 데이터를 읽음, Node 필요). 상품·가격·후기를 바꾸면 다시 실행하고 결과물을 커밋한다. 사이트 주소는 `SITE_URL` 환경변수(기본값은 스크립트의 DEFAULT_SITE, 커스텀 도메인을 붙이면 바꾼다).
+- 각 HTML의 `<!--SEO:HEAD|NAV|GRID|CONTENT|DETAIL|FOOT-->` 마커 사이는 생성기가 덮어쓴다. 직접 고치지 말고 생성기를 고친다. 마커를 지우지 않는다.
+- 생성물: `product-{id}.html`(상품 정적 페이지, 상세는 이쪽이 정식 주소), `about.html`, `faq.html`, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`, `products.json`. `product.html?id=`는 noindex이고 정적 페이지로 이동시킨다. `vercel.json`은 비공개 페이지에 X-Robots-Tag noindex를 건다.
+- 정적 텍스트(FAQ·요약)와 JSON-LD는 같은 문구여야 한다. 사이트에 구현된 정책(무료배송, 7일 환불 등)만 쓰고, 데모 쇼핑몰이라는 고지를 유지한다. 리뷰가 없으면 aggregateRating을 넣지 않는다.
+- `SIZE_TABLES`는 `js/products.js`에 있고 상세 페이지와 생성기가 같이 쓴다.
+
 상품 상세는 예전에 목록 위 모달이었다가 `product.html`로 분리됐다. `css/style.css`의 `.modal*` 규칙 대부분은 그 잔재이고, 지금은 `.modal-total`만 상세 페이지에서 재사용한다.
 
 ### 결제 흐름

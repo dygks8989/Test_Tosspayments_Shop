@@ -367,3 +367,27 @@ ul { list-style: none; }
 .profile-form label { font-size: 12px; font-weight: 700; margin-top: 8px; }
 .profile-form input { height: 42px; border: 1px solid var(--gray-200); padding: 0 12px; }
 .profile-form .btn { margin-top: 14px; }
+
+/* ============ SEO / AEO 정적 콘텐츠 ============ */
+.static-nav { background: var(--black); color: var(--white); padding: 14px 16px; font-size: 13px; }
+.static-nav a { margin-right: 14px; }
+.seo-content { border-top: 1px solid var(--gray-200); margin-top: 40px; padding: 32px 0 20px; }
+.seo-content h2 { font-size: 18px; font-weight: 800; margin: 28px 0 10px; }
+.seo-content h2:first-child { margin-top: 0; }
+.seo-content h3 { font-size: 14px; font-weight: 800; margin: 20px 0 6px; }
+.seo-content p, .seo-content li { font-size: 13px; line-height: 1.7; color: var(--gray-700); }
+.seo-content a, .doc a, .footer-links a { text-decoration: underline; text-underline-offset: 2px; }
+.seo-answer { padding: 14px 16px; background: var(--gray-100); border-left: 3px solid var(--black); color: var(--gray-900) !important; }
+.seo-top { padding-left: 18px; list-style: decimal; }
+ul.seo-top { list-style: disc; }
+.seo-note { margin-top: 24px; font-size: 12px !important; color: var(--gray-500) !important; }
+.faq-list details { border-bottom: 1px solid var(--gray-200); padding: 12px 0; }
+.faq-list summary { cursor: pointer; font-size: 14px; font-weight: 700; }
+.faq-list details p { margin-top: 8px; }
+.footer-links { margin-top: 10px; }
+.footer-links a { margin-right: 14px; }
+.doc { padding-top: 32px; padding-bottom: 40px; }
+.doc h1 { font-size: 24px; font-weight: 900; margin-bottom: 16px; }
+.doc h2 { font-size: 18px; font-weight: 800; margin: 28px 0 10px; }
+.doc p, .doc li { font-size: 13px; line-height: 1.8; color: var(--gray-700); }
+.doc ul { list-style: disc; padding-left: 18px; }

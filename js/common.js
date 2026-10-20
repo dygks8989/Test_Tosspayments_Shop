@@ -179,7 +179,7 @@ function lineItems(items) {
 function productCard(p, rank) {
   const liked = Likes.has(p.id);
   return `
-    <a class="card" href="product.html?id=${p.id}">
+    <a class="card" href="product-${p.id}.html">
       <div class="card-thumb">
         ${productImg(p)}
         ${rank ? `<span class="rank">${rank}</span>` : ""}
@@ -246,6 +246,7 @@ function renderFooter() {
         <strong>WEARHOUSE</strong>
         퍼블리싱 데모 페이지입니다. 실제 상품 판매가 이루어지지 않습니다.<br>
         결제는 토스페이먼츠 테스트 환경으로 동작하며 실제 금액이 청구되지 않습니다.
+        <nav class="footer-links" aria-label="안내"><a href="about.html">브랜드 소개</a><a href="faq.html">자주 묻는 질문</a><a href="llms.txt">llms.txt</a><a href="sitemap.xml">사이트맵</a></nav>
       </div>
     </footer>
     <div class="toast" id="toast"></div>`;

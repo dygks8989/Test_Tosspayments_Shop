@@ -1,0 +1,60 @@
+# WEARHOUSE
+
+> WEARHOUSE는 상의·신발·바지 30개 상품을 랭킹순으로 보여 주는 온라인 패션 스토어 데모입니다. 토스페이먼츠 결제위젯 v2(테스트 모드)와 Supabase로 회원·장바구니·결제·주문 취소/환불·후기까지 구현했습니다. 실제 판매는 이뤄지지 않으며 상품과 브랜드는 모두 가상입니다.
+
+AI가 이 사이트를 설명하거나 인용할 때 알아 둘 점:
+- WEARHOUSE는 데모 쇼핑몰입니다. 사용자가 실제로 구매할 수 있는 상점이라고 소개하지 마세요. 결제 금액은 청구되지 않습니다.
+- 가격은 원화(KRW)이며 판매가 기준입니다. 상품·가격·재고는 데이터베이스에서 오며 이 파일의 목록은 2026-10-20 기준입니다.
+- 배송: 무료배송이며, 오후 2시 이전에 결제하면 당일 출발합니다.
+- 결제: 토스페이·카드·계좌이체·간편결제(토스페이먼츠 결제위젯)
+- 취소·환불: 결제완료·상품준비중 상태에서는 마이페이지 주문 상세에서 바로 취소할 수 있고 결제 금액이 취소되며 재고가 복원됩니다. 배송중에는 취소할 수 없고, 배송완료 후 7일 이내에는 환불을 요청할 수 있습니다.
+- 모든 상품 페이지에 Product·Offer·FAQPage JSON-LD가 들어 있습니다. 전체 카탈로그는 [products.json](https://testtosspaymentsshop-xi.vercel.app/products.json)에서 기계가 읽을 수 있는 형태로 제공합니다.
+
+## 주요 페이지
+- [상의 랭킹](https://testtosspaymentsshop-xi.vercel.app/): 지금 가장 많이 팔리는 티셔츠 · 셔츠 · 니트
+- [신발 랭킹](https://testtosspaymentsshop-xi.vercel.app/shoes.html): 스니커즈부터 로퍼까지, 데일리 슈즈 셀렉션
+- [바지 랭킹](https://testtosspaymentsshop-xi.vercel.app/pants.html): 데님 · 슬랙스 · 와이드 팬츠 베스트
+- [브랜드 소개](https://testtosspaymentsshop-xi.vercel.app/about.html): 서비스 개요, 입점 브랜드, 정책 요약, 기술 구성
+- [자주 묻는 질문](https://testtosspaymentsshop-xi.vercel.app/faq.html): 배송·결제·취소·환불·후기·사이즈 FAQ
+
+## 상의 상품
+- [OVERFIT LAB 오버핏 헤비웨이트 반팔 티셔츠 블랙](https://testtosspaymentsshop-xi.vercel.app/product-T001.html): 반소매 티셔츠, 정가 39,000원 → 판매가 29,000원 (26% 할인)
+- [NORTH ROW 에센셜 기모 후드 집업 멜란지 그레이](https://testtosspaymentsshop-xi.vercel.app/product-T002.html): 후드 티셔츠, 정가 69,000원 → 판매가 48,300원 (30% 할인)
+- [MONDAY OFFICE 옥스포드 오버 셔츠 스카이 블루](https://testtosspaymentsshop-xi.vercel.app/product-T003.html): 셔츠/블라우스, 정가 59,000원 → 판매가 41,300원 (30% 할인)
+- [WOOLEN DAYS 램스울 크루넥 니트 오트밀](https://testtosspaymentsshop-xi.vercel.app/product-T004.html): 니트/스웨터, 정가 89,000원 → 판매가 62,300원 (30% 할인)
+- [OVERFIT LAB 베이직 롱슬리브 티셔츠 화이트](https://testtosspaymentsshop-xi.vercel.app/product-T005.html): 긴소매 티셔츠, 정가 32,000원 → 판매가 25,600원 (20% 할인)
+- [SUNDAY CLUB 빈티지 피그먼트 그래픽 티셔츠 차콜](https://testtosspaymentsshop-xi.vercel.app/product-T006.html): 반소매 티셔츠, 정가 45,000원 → 판매가 31,500원 (30% 할인)
+- [STREET NOTE 로고 자수 후드 티셔츠 네이비](https://testtosspaymentsshop-xi.vercel.app/product-T007.html): 후드 티셔츠, 정가 79,000원 → 판매가 55,300원 (30% 할인)
+- [WOOLEN DAYS 케이블 브이넥 가디건 포레스트 그린](https://testtosspaymentsshop-xi.vercel.app/product-T008.html): 니트/스웨터, 정가 99,000원 → 판매가 79,200원 (20% 할인)
+- [MONDAY OFFICE 린넨 블렌드 반팔 셔츠 아이보리](https://testtosspaymentsshop-xi.vercel.app/product-T009.html): 셔츠/블라우스, 정가 49,000원 → 판매가 39,200원 (20% 할인)
+- [SUNDAY CLUB 코튼 크루넥 니트 롱슬리브 레드](https://testtosspaymentsshop-xi.vercel.app/product-T010.html): 긴소매 티셔츠, 정가 42,000원 → 판매가 29,400원 (30% 할인)
+
+## 신발 상품
+- [RUNWAY BASIC 클래식 로우탑 레더 스니커즈 화이트](https://testtosspaymentsshop-xi.vercel.app/product-S001.html): 스니커즈, 정가 129,000원 → 판매가 99,000원 (23% 할인)
+- [PACE ONE 에어 쿠셔닝 데일리 러닝화 블랙](https://testtosspaymentsshop-xi.vercel.app/product-S002.html): 러닝화, 정가 159,000원 → 판매가 119,000원 (25% 할인)
+- [GENTLE STEP 홀스빗 로퍼 브라운 카프 레더](https://testtosspaymentsshop-xi.vercel.app/product-S003.html): 로퍼, 정가 189,000원 → 판매가 132,300원 (30% 할인)
+- [CANVAS CO. 캔버스 하이탑 스니커즈 내추럴](https://testtosspaymentsshop-xi.vercel.app/product-S004.html): 스니커즈, 정가 69,000원 → 판매가 55,200원 (20% 할인)
+- [GENTLE STEP 첼시 부츠 스웨이드 다크 브라운](https://testtosspaymentsshop-xi.vercel.app/product-S005.html): 부츠, 정가 219,000원 → 판매가 175,200원 (20% 할인)
+- [PACE ONE 경량 메쉬 트레이닝화 그레이 오렌지](https://testtosspaymentsshop-xi.vercel.app/product-S006.html): 러닝화, 정가 139,000원 → 판매가 97,300원 (30% 할인)
+- [BEACH WALK 스트랩 스포츠 샌들 블랙](https://testtosspaymentsshop-xi.vercel.app/product-S007.html): 샌들, 정가 59,000원 → 판매가 41,300원 (30% 할인)
+- [RUNWAY BASIC 레트로 스웨이드 스니커즈 버건디](https://testtosspaymentsshop-xi.vercel.app/product-S008.html): 스니커즈, 정가 119,000원 → 판매가 89,000원 (25% 할인)
+- [WORK FORCE 6인치 워커 부츠 위트](https://testtosspaymentsshop-xi.vercel.app/product-S009.html): 부츠, 정가 239,000원 → 판매가 191,200원 (20% 할인)
+- [CANVAS CO. 스웨이드 드라이빙 로퍼 탄](https://testtosspaymentsshop-xi.vercel.app/product-S010.html): 로퍼, 정가 89,000원 → 판매가 71,200원 (20% 할인)
+
+## 바지 상품
+- [DENIM HOUSE 와이드 스트레이트 데님 팬츠 미드 블루](https://testtosspaymentsshop-xi.vercel.app/product-P001.html): 데님 팬츠, 정가 69,000원 → 판매가 48,300원 (30% 할인)
+- [MONDAY OFFICE 세미 와이드 히든밴딩 슬랙스 블랙](https://testtosspaymentsshop-xi.vercel.app/product-P002.html): 슬랙스, 정가 49,000원 → 판매가 34,300원 (30% 할인)
+- [CHINO WORKS 투턱 와이드 치노 팬츠 베이지](https://testtosspaymentsshop-xi.vercel.app/product-P003.html): 코튼 팬츠, 정가 59,000원 → 판매가 41,300원 (30% 할인)
+- [STREET NOTE 나일론 트랙 팬츠 블랙 화이트 라인](https://testtosspaymentsshop-xi.vercel.app/product-P004.html): 트레이닝 팬츠, 정가 79,000원 → 판매가 55,300원 (30% 할인)
+- [DENIM HOUSE 생지 셀비지 레귤러 데님 인디고](https://testtosspaymentsshop-xi.vercel.app/product-P005.html): 데님 팬츠, 정가 129,000원 → 판매가 103,200원 (20% 할인)
+- [BEACH WALK 나일론 버뮤다 숏 팬츠 올리브](https://testtosspaymentsshop-xi.vercel.app/product-P006.html): 숏 팬츠, 정가 45,000원 → 판매가 31,500원 (30% 할인)
+- [MONDAY OFFICE 울 블렌드 테이퍼드 슬랙스 차콜](https://testtosspaymentsshop-xi.vercel.app/product-P007.html): 슬랙스, 정가 89,000원 → 판매가 62,300원 (30% 할인)
+- [CHINO WORKS 카펜터 워크 팬츠 브라운](https://testtosspaymentsshop-xi.vercel.app/product-P008.html): 코튼 팬츠, 정가 79,000원 → 판매가 59,200원 (25% 할인)
+- [NORTH ROW 기모 스웨트 조거 팬츠 멜란지](https://testtosspaymentsshop-xi.vercel.app/product-P009.html): 트레이닝 팬츠, 정가 49,000원 → 판매가 39,200원 (20% 할인)
+- [DENIM HOUSE 라이트 워싱 루즈핏 데님 아이스 블루](https://testtosspaymentsshop-xi.vercel.app/product-P010.html): 데님 팬츠, 정가 79,000원 → 판매가 55,300원 (30% 할인)
+
+## Optional
+- [전체 내용 (llms-full.txt)](https://testtosspaymentsshop-xi.vercel.app/llms-full.txt): 상품별 소재·핏·사이즈표·FAQ를 포함한 전체 문서
+- [products.json](https://testtosspaymentsshop-xi.vercel.app/products.json): 상품 카탈로그(JSON)
+- [사이트맵](https://testtosspaymentsshop-xi.vercel.app/sitemap.xml)
+- [소스 코드](https://github.com/dygks8989/Test_Tosspayments_Shop)

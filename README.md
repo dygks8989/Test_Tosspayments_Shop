@@ -4,7 +4,8 @@
 | 파일 | 내용 |
 |---|---|
 | `index.html` / `shoes.html` / `pants.html` | 상의 / 신발 / 바지 상품 목록 (랭킹, 필터, 정렬, 좋아요) |
-| `product.html?id=T001` | 상품 상세 (사이즈 선택, 상품정보, 사이즈표, 후기, 추천상품) |
+| `product-T001.html` | 상품 상세 (사이즈 선택, 상품정보, 사이즈표, 후기, 추천상품). `tools/seo-build.mjs`가 상품마다 생성, 옛 주소 `product.html?id=T001`은 이쪽으로 이동 |
+| `about.html` / `faq.html` | 브랜드 소개 / 자주 묻는 질문 (SEO·AEO·GEO용) |
 | `login.html` / `signup.html` | 로그인 / 회원가입 |
 | `mypage.html` | 마이페이지 (주문 내역, 좋아요, 회원 정보) — 로그인 필요 |
 | `checkout.html` | 주문서 + 토스페이먼츠 결제위젯 (회원은 주문자 정보 자동 입력) |
@@ -25,6 +26,12 @@ python -m http.server 5500
 npx serve -l 5500
 ```
 → http://localhost:5500
+
+## SEO · AEO · GEO
+검색엔진·AI 검색이 읽을 수 있도록 정적 메타태그, JSON-LD(구조화 데이터), FAQ, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`, `products.json`을 생성합니다.
+```bash
+node tools/seo-build.mjs   # 상품·가격·후기가 바뀌면 다시 실행 후 커밋 (SITE_URL 로 주소 변경)
+```
 
 ## 회원 · 주문 (Supabase)
 - 회원·장바구니·좋아요·주문·후기는 Supabase DB에 저장됩니다. 로그인하지 않으면 담기·좋아요·결제를 할 수 없습니다.

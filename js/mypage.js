@@ -188,7 +188,7 @@ async function orderDetailPanel(orderId) {
       const canReview = o.status === "delivered" && !rv;
       return `
       <div class="order">
-        <a class="cart-item" href="product.html?id=${esc(i.product_id)}">
+        <a class="cart-item" href="product-${esc(i.product_id)}.html">
           <div class="thumb">${productImg({ id: i.product_id, brand: i.brand, name: i.product_name, image: i.image_path })}</div>
           <div>
             <p class="brand">${esc(i.brand)}</p>
@@ -265,7 +265,7 @@ async function reviewsPanel() {
       const p = findProduct(r.product_id);
       return `
       <li>
-        <p class="r-head"><a href="product.html?id=${esc(r.product_id)}"><b>${p ? esc(p.name) : esc(r.product_id)}</b></a> · ${fmtDate(r.created_at)}</p>
+        <p class="r-head"><a href="product-${esc(r.product_id)}.html"><b>${p ? esc(p.name) : esc(r.product_id)}</b></a> · ${fmtDate(r.created_at)}</p>
         <p><span class="star">${stars(r.rating)}</span></p>
         ${my.editReview === r.id ? reviewForm({ review: r }) : `<p>${esc(r.content)}</p>`}
         ${r.photos.length ? `<div class="rv-photos">${r.photos.map((ph) => `<img src="${esc(sb.storage.from("review-photos").getPublicUrl(ph).data.publicUrl)}" alt="후기 사진" loading="lazy">`).join("")}</div>` : ""}
