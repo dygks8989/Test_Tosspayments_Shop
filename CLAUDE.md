@@ -54,6 +54,8 @@ npx serve -l 5500
 - 정적 텍스트(FAQ·요약)와 JSON-LD는 같은 문구여야 한다. 사이트에 구현된 정책(무료배송, 7일 환불 등)만 쓰고, 데모 쇼핑몰이라는 고지를 유지한다. 리뷰가 없으면 aggregateRating을 넣지 않는다.
 - Search Console 소유권 확인 파일 `google1a348e269ff5406c.html`은 삭제하지 않는다(삭제하면 확인이 풀림).
 - `SIZE_TABLES`는 `js/products.js`에 있고 상세 페이지와 생성기가 같이 쓴다.
+- 생성기를 다시 돌리면 `lastmod`/`dateModified` 날짜만 바뀐 파일이 대량으로 생긴다. 데이터·문구가 안 바뀌었다면 생성물은 커밋하지 말고 `git checkout`으로 되돌린다.
+- 생성 문구에 변수를 끼울 때 조사(은/는, 이/가)가 깨지기 쉽다("상의은", "2XL가"). 조사가 붙는 자리는 문장 구조를 바꿔 피한다.
 
 상품 상세는 예전에 목록 위 모달이었다가 `product.html`로 분리됐다. `css/style.css`의 `.modal*` 규칙 대부분은 그 잔재이고, 지금은 `.modal-total`만 상세 페이지에서 재사용한다.
 
@@ -94,3 +96,10 @@ npx serve -l 5500
 ## 저장소
 
 원격: https://github.com/dygks8989/Test_Tosspayments_Shop (`main`)
+
+## 배포 / 검색 등록
+
+- 실제 서비스 주소(canonical)는 `https://testtosspaymentsshop-xi.vercel.app`, Vercel 프로젝트는 `test_tosspayments_shop`이다. `main`에 푸시하면 자동 배포된다.
+- CLI로 배포할 때는 먼저 기존 프로젝트에 연결(`vercel link`)해야 한다. 연결 없이 `deploy --prod --yes`를 하면 새 프로젝트가 생긴다(이미 한 번 생겨서 삭제함). 푸시만으로 충분하다.
+- 검색엔진 등록: Google Search Console은 등록·sitemap 제출 완료(HTML 파일 방식). 네이버 서치어드바이저는 Claude in Chrome이 접속을 막아서 직접 등록해야 하고, 메타태그 값은 `NAVER_VERIFICATION=값 node tools/seo-build.mjs`로 넣는다.
+- Claude in Chrome은 연결이 늦게 잡힐 수 있으니 `list_connected_browsers`로 재확인한다. 스크린샷이 멈추면 `get_page_text`/`find`로 대신한다.
