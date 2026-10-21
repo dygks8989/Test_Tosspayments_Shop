@@ -2,7 +2,7 @@
   "site": "https://testtosspaymentsshop-xi.vercel.app/",
   "name": "WEARHOUSE",
   "currency": "KRW",
-  "generatedAt": "2026-10-20",
+  "generatedAt": "2026-10-21",
   "notice": "WEARHOUSE는 실제 상품을 판매하지 않는 퍼블리싱·결제 연동 데모 쇼핑몰입니다. 결제는 토스페이먼츠 테스트 환경에서 이뤄져 실제 금액이 청구되지 않고, 상품과 브랜드는 모두 가상입니다.",
   "policies": {
     "shipping": "무료배송이며, 오후 2시 이전에 결제하면 당일 출발합니다.",

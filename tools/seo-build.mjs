@@ -229,9 +229,9 @@ function catFaqs(cat) {
       `현재 ${c.label} ${list.length}개 상품의 판매가는 ${won(Math.min(...prices))}부터 ${won(Math.max(...prices))}까지이며 평균 할인율은 약 ${avgRate}%입니다. 가장 저렴한 상품은 ${cheapest.brand} ${cheapest.name}(${won(cheapest.sale)})입니다.`],
     [`${c.label}에는 어떤 브랜드가 있나요?`,
       `${join([...new Set(list.map((p) => p.brand))])} 브랜드의 ${c.label} 상품을 판매합니다. 모두 ${BRAND} 데모를 위한 가상 브랜드입니다.`],
-    [`${c.label}은 어떤 종류가 있나요?`, `${subs.join(", ")}가 있으며 목록 상단 필터에서 종류별로 골라볼 수 있습니다.`],
+    [`${c.label}에는 어떤 종류가 있나요?`, `${subs.join(", ")}가 있으며 목록 상단 필터에서 종류별로 골라볼 수 있습니다.`],
     [`${c.label} 사이즈는 어떻게 고르나요?`,
-      `${c.label} 사이즈는 ${c.sizes.join(", ")}가 있고, 상품 상세 페이지의 사이즈표(${SIZE_TABLES[cat].head.slice(1).join("·")})와 평소 입는 옷의 실측을 비교하면 됩니다. 측정 방법에 따라 1~3cm 오차가 있을 수 있습니다.`],
+      `${c.label} 사이즈는 ${c.sizes.join(", ")} 중에서 고를 수 있고, 상품 상세 페이지의 사이즈표(${SIZE_TABLES[cat].head.slice(1).join("·")})와 평소 입는 옷의 실측을 비교하면 됩니다. 측정 방법에 따라 1~3cm 오차가 있을 수 있습니다.`],
     [`배송비와 결제 방법은 어떻게 되나요?`, `배송은 ${SHIP} 결제는 ${PAY}로 할 수 있습니다.`],
   ];
 }
@@ -300,7 +300,7 @@ function productFaqs(p) {
     [`${p.name}의 가격은 얼마인가요?`,
       `${p.brand} ${p.name}의 정가는 ${won(p.price)}이고 ${rate(p)}% 할인된 ${won(p.sale)}에 판매합니다. 구매확정 시 최대 ${won(Math.floor(p.sale * 0.03))}이 적립됩니다.`],
     [`${p.name}은(는) 어떤 사이즈가 있나요?`,
-      `${sizeNote} 사이즈가 있습니다. 상세 페이지 사이즈표 기준(${t.head.slice(1).join("·")})으로 평소 입는 옷과 비교해 고르세요.`],
+      `사이즈는 ${sizeNote}입니다. 상세 페이지 사이즈표 기준(${t.head.slice(1).join("·")})으로 평소 입는 옷과 비교해 고르세요.`],
     [`${p.name}의 소재와 핏, 세탁 방법은 무엇인가요?`,
       `소재는 ${d.material}, 핏은 ${d.fit}, 시즌은 ${d.season}입니다. 세탁은 ${d.wash}.`],
     [`배송비와 배송 기간은 어떻게 되나요?`, `${SHIP}`],
@@ -381,7 +381,7 @@ function productPage(p, template) {
   const content = `<section class="seo-content">
 <div class="inner">
 <h2>${esc(p.name)} 한눈에 보기</h2>
-<p class="seo-answer">${esc(`${p.brand}의 「${p.name}」은 ${c.label}(${p.sub}) 상품으로, 정가 ${won(p.price)}에서 ${rate(p)}% 할인된 ${won(p.sale)}에 판매합니다. 소재는 ${d.material}, 핏은 ${d.fit}이며 ${d.season} 착용할 수 있습니다. 사이즈는 ${p.sizes.join(", ")}가 있고 ${SHIP}`)}</p>
+<p class="seo-answer">${esc(`${p.brand}의 「${p.name}」 상품은 ${c.label}(${p.sub}) 카테고리에 속하며, 정가 ${won(p.price)}에서 ${rate(p)}% 할인된 ${won(p.sale)}에 판매합니다. 소재는 ${d.material}, 핏은 ${d.fit}이며 ${d.season} 착용할 수 있습니다. 사이즈는 ${p.sizes.join(", ")}이며 ${SHIP}`)}</p>
 <h3>상품 정보</h3>
 <table class="spec"><tr><th>브랜드</th><td>${esc(p.brand)}</td><th>카테고리</th><td>${esc(c.label)} › ${esc(p.sub)}</td></tr><tr><th>소재</th><td>${esc(d.material)}</td><th>핏</th><td>${esc(d.fit)}</td></tr><tr><th>시즌</th><td>${esc(d.season)}</td><th>세탁방법</th><td>${esc(d.wash)}</td></tr></table>
 <h3>사이즈표</h3>
