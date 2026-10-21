@@ -381,7 +381,7 @@ function productPage(p, template) {
   const content = `<section class="seo-content">
 <div class="inner">
 <h2>${esc(p.name)} 한눈에 보기</h2>
-<p class="seo-answer">${esc(`${p.brand}의 「${p.name}」 상품은 ${c.label}(${p.sub}) 카테고리에 속하며, 정가 ${won(p.price)}에서 ${rate(p)}% 할인된 ${won(p.sale)}에 판매합니다. 소재는 ${d.material}, 핏은 ${d.fit}이며 ${d.season} 착용할 수 있습니다. 사이즈는 ${p.sizes.join(", ")}이며 ${SHIP}`)}</p>
+<p class="seo-answer">${esc(`${p.brand}의 「${p.name}」 상품은 ${c.label}(${p.sub}) 카테고리에 속하며, 정가 ${won(p.price)}에서 ${rate(p)}% 할인된 ${won(p.sale)}에 판매합니다. 소재는 ${d.material}, 핏은 ${d.fit}이며 ${d.season} 착용할 수 있습니다. 사이즈는 ${p.sizes.join(", ")}입니다. 배송은 ${SHIP}`)}</p>
 <h3>상품 정보</h3>
 <table class="spec"><tr><th>브랜드</th><td>${esc(p.brand)}</td><th>카테고리</th><td>${esc(c.label)} › ${esc(p.sub)}</td></tr><tr><th>소재</th><td>${esc(d.material)}</td><th>핏</th><td>${esc(d.fit)}</td></tr><tr><th>시즌</th><td>${esc(d.season)}</td><th>세탁방법</th><td>${esc(d.wash)}</td></tr></table>
 <h3>사이즈표</h3>
