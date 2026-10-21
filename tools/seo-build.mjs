@@ -23,6 +23,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_SITE = "https://testtosspaymentsshop-xi.vercel.app";
 const SITE = (process.env.SITE_URL || DEFAULT_SITE).replace(/\/+$/, "");
 const BRAND = "WEARHOUSE";
+/* 네이버 서치어드바이저 소유확인 메타태그 값 (content 값만). 예: NAVER_VERIFICATION=abc123 node tools/seo-build.mjs */
+const NAVER_VERIFICATION = process.env.NAVER_VERIFICATION || "";
 const NOW = new Date();
 const TODAY = NOW.toISOString().slice(0, 10);
 
@@ -155,6 +157,7 @@ function head({ title, desc, file, image, imageAlt, robots = ROBOTS_INDEX, ogTyp
   );
   if (image) lines.push(`<meta name="twitter:image" content="${esc(image)}">`);
   lines.push(...extra);
+  if (NAVER_VERIFICATION && file === "index.html") lines.push(`<meta name="naver-site-verification" content="${esc(NAVER_VERIFICATION)}">`);
   if (graph.length) lines.push(ld({ "@context": "https://schema.org", "@graph": graph }));
   return lines.map((l) => "  " + l).join("\n");
 }
