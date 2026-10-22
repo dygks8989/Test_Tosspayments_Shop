@@ -357,23 +357,34 @@ const Chat = {
   busy: false,
   save() { save(sessionStorage, CHAT_KEY, this.messages.slice(-20)); },
 };
+const CHAT_ICON = {
+  bubble: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>',
+  close: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
+  reset: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  send: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12l16-8-6 16-2-7-8-1z" fill="currentColor"/></svg>',
+};
 
 function renderChat() {
   // 결제 진행 화면에서는 띄우지 않는다
   if (!(CHAT_LOCAL || CHAT_REMOTE) || document.getElementById("chatFab") || /(checkout|success|fail)\.html$/.test(location.pathname)) return;
   document.body.insertAdjacentHTML("beforeend", `
     <button type="button" class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="쇼핑 도우미 열기" aria-controls="chatPanel" aria-expanded="false">
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+      ${CHAT_ICON.bubble}<span class="chat-fab-label">AI 쇼핑 도우미</span>
     </button>
     <section class="chat-panel" id="chatPanel" role="dialog" aria-label="쇼핑 도우미" hidden>
-      <div class="chat-head"><div><strong>쇼핑 도우미</strong><span>상품·배송·환불 무엇이든 물어보세요</span></div>
-        <button type="button" onclick="toggleChat(false)" aria-label="닫기">×</button></div>
+      <div class="chat-head">
+        <span class="chat-avatar" aria-hidden="true">W</span>
+        <div class="chat-title"><strong>쇼핑 도우미</strong><span><i class="chat-dot"></i>상품·재고·배송·환불을 물어보세요</span></div>
+        <button type="button" class="chat-icon-btn" onclick="resetChat()" aria-label="새 대화" title="새 대화">${CHAT_ICON.reset}</button>
+        <button type="button" class="chat-icon-btn" onclick="toggleChat(false)" aria-label="닫기" title="닫기">${CHAT_ICON.close}</button>
+      </div>
       <div class="chat-log" id="chatLog" aria-live="polite"></div>
       <form class="chat-form" onsubmit="event.preventDefault(); sendChat()">
-        <input id="chatInput" maxlength="500" autocomplete="off" placeholder="메시지를 입력하세요" aria-label="질문">
-        <button type="submit" class="btn btn-black" id="chatSend">전송</button>
+        <textarea id="chatInput" rows="1" maxlength="500" placeholder="궁금한 점을 입력하세요" aria-label="질문"
+          oninput="chatAutosize(this)" onkeydown="chatKeydown(event)"></textarea>
+        <button type="submit" class="chat-send" id="chatSend" aria-label="전송">${CHAT_ICON.send}</button>
       </form>
-      <p class="chat-note">AI 답변은 틀릴 수 있어요. 데모 쇼핑몰이라 실제 판매·배송은 없습니다.</p>
+      <p class="chat-note">AI 답변은 틀릴 수 있어요 · 데모 쇼핑몰이라 실제 판매·배송은 없어요</p>
     </section>`);
   renderChatLog();
 }
@@ -383,8 +394,27 @@ function toggleChat(open) {
   if (!panel) return;
   const show = open ?? panel.hidden;
   panel.hidden = !show;
-  document.getElementById("chatFab").setAttribute("aria-expanded", show);
+  const fab = document.getElementById("chatFab");
+  fab.setAttribute("aria-expanded", show);
+  fab.classList.toggle("open", show);
   if (show) { renderChatLog(); document.getElementById("chatInput").focus(); }
+}
+
+function resetChat() {
+  if (Chat.busy) return;
+  Chat.messages = [];
+  Chat.save();
+  renderChatLog();
+  document.getElementById("chatInput").focus();
+}
+
+/* Enter 전송, Shift+Enter 줄바꿈 (한글 조합 중 Enter는 무시) */
+function chatKeydown(e) {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }
+}
+function chatAutosize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 96) + "px";
 }
 
 /* 답변은 이스케이프 후 링크(사이트 내부 페이지만)·굵게·줄바꿈만 허용한다 */
@@ -395,17 +425,54 @@ function chatFormat(text) {
     .replace(/\n/g, "<br>");
 }
 
+/* 답변에 링크된 상품을 미니 카드로 보여준다 (최대 4개) */
+function chatProducts(text) {
+  const ids = [...new Set([...String(text).matchAll(/product-([A-Z]\d{3})\.html/g)].map((m) => m[1]))];
+  const items = ids.map(findProduct).filter(Boolean).slice(0, 4);
+  if (!items.length) return "";
+  return `<div class="chat-cards">${items.map((p) => `
+    <a class="chat-card" href="product-${p.id}.html">
+      ${productImg(p)}
+      <span class="chat-card-brand">${esc(p.brand)}</span>
+      <span class="chat-card-name">${esc(p.name)}</span>
+      <span class="chat-card-price"><em>${discountRate(p)}%</em>${won(p.sale)}</span>
+    </a>`).join("")}</div>`;
+}
+
+function chatMessage(m, i) {
+  if (m.role === "user") return `<div class="chat-row me"><div class="chat-msg">${esc(m.content)}</div></div>`;
+  const retry = m.error && i === Chat.messages.length - 1
+    ? `<button type="button" class="chat-retry" onclick="retryChat()">다시 시도</button>` : "";
+  // 상품은 카드로 보여주므로 출처 칩에는 정책·FAQ 같은 안내 페이지만 남긴다
+  const docs = (m.sources || []).filter((s) => !/^product-/.test(s.url));
+  const sources = docs.length
+    ? `<div class="chat-src"><span>참고</span>${docs.map((s) => `<a href="${esc(s.url)}">${esc(s.title)}</a>`).join("")}</div>` : "";
+  return `
+    <div class="chat-row bot${m.error ? " error" : ""}">
+      <span class="chat-avatar sm" aria-hidden="true">W</span>
+      <div class="chat-body"><div class="chat-msg">${chatFormat(m.content)}${retry}</div>${m.error ? "" : chatProducts(m.content)}${sources}</div>
+    </div>`;
+}
+
 function renderChatLog() {
   const log = document.getElementById("chatLog");
   if (!log) return;
-  const intro = `<div class="chat-msg bot">안녕하세요, WEARHOUSE 쇼핑 도우미예요. 상품 추천, 사이즈, 재고, 배송·환불 규정을 물어보세요.</div>`;
+  const intro = chatMessage({ role: "assistant", content: "안녕하세요, **WEARHOUSE 쇼핑 도우미**예요.\n상품 추천, 사이즈, 재고, 배송·환불 규정을 물어보세요." }, -1);
   const chips = Chat.messages.length ? "" :
     `<div class="chat-chips">${CHAT_SUGGESTIONS.map((q) => `<button type="button" onclick="sendChat(this.textContent)">${esc(q)}</button>`).join("")}</div>`;
-  log.innerHTML = intro + chips + Chat.messages.map((m) => `
-    <div class="chat-msg ${m.role === "user" ? "me" : "bot"}${m.error ? " error" : ""}">${m.role === "user" ? esc(m.content) : chatFormat(m.content)}${
-      m.sources?.length ? `<div class="chat-src">${m.sources.map((s) => `<a href="${esc(s.url)}">${esc(s.title)}</a>`).join("")}</div>` : ""}</div>`).join("") +
-    (Chat.busy ? `<div class="chat-msg bot typing"><i></i><i></i><i></i></div>` : "");
+  const typing = Chat.busy
+    ? `<div class="chat-row bot"><span class="chat-avatar sm" aria-hidden="true">W</span><div class="chat-msg typing" aria-label="답변 작성 중"><i></i><i></i><i></i></div></div>` : "";
+  log.innerHTML = intro + chips + Chat.messages.map(chatMessage).join("") + typing;
   log.scrollTop = log.scrollHeight;
+}
+
+/* 실패한 마지막 질문을 다시 보낸다 */
+function retryChat() {
+  const last = Chat.messages.at(-1);
+  if (!last?.error) return;
+  Chat.messages.pop();
+  const q = Chat.messages.pop();
+  if (q?.role === "user") sendChat(q.content);
 }
 
 async function sendChat(text) {
@@ -413,18 +480,18 @@ async function sendChat(text) {
   const q = String(text ?? input.value).trim();
   if (!q || Chat.busy) return;
   input.value = "";
+  chatAutosize(input);
   Chat.messages.push({ role: "user", content: q });
   Chat.busy = true;
   document.getElementById("chatSend").disabled = true;
   renderChatLog();
   try {
     const history = Chat.messages.filter((m) => !m.error).slice(-8).map(({ role, content }) => ({ role, content }));
-    // 로컬 서버(tools/dev-server.mjs)는 .env의 키로 /api/chat을 처리한다. 배포 사이트는 Supabase 함수 chat을 쓴다
-    const { data, error } = CHAT_LOCAL
+    const data = CHAT_LOCAL
       ? await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) })
-          .then(async (r) => ({ data: await r.json() }), (e) => ({ error: e }))
-      : await sb.functions.invoke("chat", { body: { messages: history } });
-    if (error || !data?.ok) throw new Error(data?.message || "답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.");
+          .then((r) => r.json()).catch(() => ({ message: "로컬 챗봇 서버에 연결하지 못했어요. node tools/dev-server.mjs로 실행해 주세요." }))
+      : (await sb.functions.invoke("chat", { body: { messages: history } })).data;
+    if (!data?.ok) throw new Error(data?.message || "답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.");
     Chat.messages.push({ role: "assistant", content: data.answer, sources: data.sources });
   } catch (e) {
     Chat.messages.push({ role: "assistant", content: e.message, error: true });
