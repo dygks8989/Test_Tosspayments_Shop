@@ -250,6 +250,7 @@ function renderFooter() {
       </div>
     </footer>
     <div class="toast" id="toast"></div>`;
+  renderChat();
 }
 
 function renderCartCount() {
@@ -344,6 +345,98 @@ function checkoutCart() {
   goCheckout(items, true);
 }
 
+/* ---------- 쇼핑 도우미 챗봇 (Upstage 임베딩 검색 + OpenAI 답변) ----------
+ * 로컬(localhost): tools/dev-server.mjs의 /api/chat (키는 .env)
+ * 배포 사이트: Edge Function chat. Supabase 시크릿에 OpenAI 키가 없으면 동작하지 않으므로 CHAT_REMOTE가 false면 숨긴다 */
+const CHAT_KEY = "ws_chat";
+const CHAT_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+const CHAT_REMOTE = false;
+const CHAT_SUGGESTIONS = ["배송비는 얼마예요?", "5만원 이하 후드 추천해줘", "환불은 어떻게 해요?", "260 사이즈 스니커즈 재고 있어요?"];
+const Chat = {
+  messages: load(sessionStorage, CHAT_KEY, []),
+  busy: false,
+  save() { save(sessionStorage, CHAT_KEY, this.messages.slice(-20)); },
+};
+
+function renderChat() {
+  // 결제 진행 화면에서는 띄우지 않는다
+  if (!(CHAT_LOCAL || CHAT_REMOTE) || document.getElementById("chatFab") || /(checkout|success|fail)\.html$/.test(location.pathname)) return;
+  document.body.insertAdjacentHTML("beforeend", `
+    <button type="button" class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="쇼핑 도우미 열기" aria-controls="chatPanel" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+    </button>
+    <section class="chat-panel" id="chatPanel" role="dialog" aria-label="쇼핑 도우미" hidden>
+      <div class="chat-head"><div><strong>쇼핑 도우미</strong><span>상품·배송·환불 무엇이든 물어보세요</span></div>
+        <button type="button" onclick="toggleChat(false)" aria-label="닫기">×</button></div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <form class="chat-form" onsubmit="event.preventDefault(); sendChat()">
+        <input id="chatInput" maxlength="500" autocomplete="off" placeholder="메시지를 입력하세요" aria-label="질문">
+        <button type="submit" class="btn btn-black" id="chatSend">전송</button>
+      </form>
+      <p class="chat-note">AI 답변은 틀릴 수 있어요. 데모 쇼핑몰이라 실제 판매·배송은 없습니다.</p>
+    </section>`);
+  renderChatLog();
+}
+
+function toggleChat(open) {
+  const panel = document.getElementById("chatPanel");
+  if (!panel) return;
+  const show = open ?? panel.hidden;
+  panel.hidden = !show;
+  document.getElementById("chatFab").setAttribute("aria-expanded", show);
+  if (show) { renderChatLog(); document.getElementById("chatInput").focus(); }
+}
+
+/* 답변은 이스케이프 후 링크(사이트 내부 페이지만)·굵게·줄바꿈만 허용한다 */
+function chatFormat(text) {
+  return esc(text)
+    .replace(/\[([^\]\n]+)\]\(((?:product-[A-Z]\d{3}|index|shoes|pants|faq|about|mypage)\.html)\)/g, '<a href="$2">$1</a>')
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n/g, "<br>");
+}
+
+function renderChatLog() {
+  const log = document.getElementById("chatLog");
+  if (!log) return;
+  const intro = `<div class="chat-msg bot">안녕하세요, WEARHOUSE 쇼핑 도우미예요. 상품 추천, 사이즈, 재고, 배송·환불 규정을 물어보세요.</div>`;
+  const chips = Chat.messages.length ? "" :
+    `<div class="chat-chips">${CHAT_SUGGESTIONS.map((q) => `<button type="button" onclick="sendChat(this.textContent)">${esc(q)}</button>`).join("")}</div>`;
+  log.innerHTML = intro + chips + Chat.messages.map((m) => `
+    <div class="chat-msg ${m.role === "user" ? "me" : "bot"}${m.error ? " error" : ""}">${m.role === "user" ? esc(m.content) : chatFormat(m.content)}${
+      m.sources?.length ? `<div class="chat-src">${m.sources.map((s) => `<a href="${esc(s.url)}">${esc(s.title)}</a>`).join("")}</div>` : ""}</div>`).join("") +
+    (Chat.busy ? `<div class="chat-msg bot typing"><i></i><i></i><i></i></div>` : "");
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChat(text) {
+  const input = document.getElementById("chatInput");
+  const q = String(text ?? input.value).trim();
+  if (!q || Chat.busy) return;
+  input.value = "";
+  Chat.messages.push({ role: "user", content: q });
+  Chat.busy = true;
+  document.getElementById("chatSend").disabled = true;
+  renderChatLog();
+  try {
+    const history = Chat.messages.filter((m) => !m.error).slice(-8).map(({ role, content }) => ({ role, content }));
+    // 로컬 서버(tools/dev-server.mjs)는 .env의 키로 /api/chat을 처리한다. 배포 사이트는 Supabase 함수 chat을 쓴다
+    const { data, error } = CHAT_LOCAL
+      ? await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) })
+          .then(async (r) => ({ data: await r.json() }), (e) => ({ error: e }))
+      : await sb.functions.invoke("chat", { body: { messages: history } });
+    if (error || !data?.ok) throw new Error(data?.message || "답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.");
+    Chat.messages.push({ role: "assistant", content: data.answer, sources: data.sources });
+  } catch (e) {
+    Chat.messages.push({ role: "assistant", content: e.message, error: true });
+  } finally {
+    Chat.busy = false;
+    Chat.save();
+    document.getElementById("chatSend").disabled = false;
+    renderChatLog();
+    input.focus();
+  }
+}
+
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeDrawer(); typeof closeModal === "function" && closeModal(); }
+  if (e.key === "Escape") { closeDrawer(); toggleChat(false); typeof closeModal === "function" && closeModal(); }
 });

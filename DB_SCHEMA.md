@@ -157,6 +157,29 @@ pending ─ 승인 ─> paid ─> preparing ─> shipping ─> delivered ─ 환
 
 인덱스: `(product_id, created_at desc)`, `(user_id)`.
 
+### chat_documents — 챗봇 검색 문서 (pgvector)
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | text | PK | `policy:shop` / `faq:N` / `category:상의` / `product:T001` |
+| kind | text | NOT NULL, CHECK in (policy, faq, category, product) | |
+| title | text | NOT NULL | |
+| content | text | NOT NULL | 검색·답변 근거 문장(가격·재고·평점은 넣지 않음) |
+| url | text | | 출처 링크(faq.html, product-T001.html 등) |
+| product_id | text | FK → products ON DELETE CASCADE | 상품 문서만 |
+| embedding | vector(4096) | | Upstage `embedding-passage`. NULL이면 Edge Function `chat`의 `sync`가 채운다 |
+| updated_at | timestamptz | NOT NULL, default now() | |
+
+`tools/chat-docs.mjs`가 `llms-full.txt`로 만든 `supabase/chat-docs.sql`로 채운다. 내용이 바뀐 행만 embedding이 비워진다. 문서가 수십 개라 벡터 인덱스는 없다(pgvector 인덱스는 2000차원까지만 지원).
+
+### chat_requests — 챗봇 요청 횟수 제한
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, identity | |
+| client | text | NOT NULL | 접속 IP의 SHA-256 해시 앞 24자리(원래 IP는 저장하지 않음) |
+| created_at | timestamptz | NOT NULL, default now() | |
+
+인덱스: `(client, created_at)`. pg_cron `purge-chat-requests`가 매일 하루 지난 행을 지운다.
+
 ## 3. 뷰
 
 ### product_stats (`security_invoker = true`)
@@ -184,6 +207,7 @@ pending ─ 승인 ─> paid ─> preparing ─> shipping ─> delivered ─ 환
 | `orders_before_update` | 트리거(orders BEFORE UPDATE) | status가 delivered로 바뀌면 `delivered_at` = now() |
 | `set_review_author` | 트리거(reviews BEFORE INSERT) | profiles 이름으로 `author_name` 마스킹 설정(클라이언트가 보낸 값은 무시) |
 | `sync_like_count` | 트리거(likes INSERT/DELETE) | `products.like_count` 증감 |
+| `match_chat_documents(query_embedding, match_count)` | RPC(anon 포함 호출 가능) | 코사인 거리로 가까운 `chat_documents` 최대 20개와 유사도 반환. 문서가 공개 정보라 함수만 열고 테이블은 막아 둔다 |
 
 ## 5. 접근 권한 (RLS)
 
@@ -200,6 +224,7 @@ pending ─ 승인 ─> paid ─> preparing ─> shipping ─> delivered ─ 환
 | order_items | – | SELECT (본인 주문 것만) |
 | order_events | – | SELECT (본인 주문 것만) |
 | reviews | SELECT | SELECT(전체), INSERT(아래 조건), UPDATE·DELETE(본인) |
+| chat_documents / chat_requests | – | – (권한 회수, service role만. 검색은 `match_chat_documents`로) |
 
 - **reviews INSERT 조건**: `user_id`가 본인 + 해당 `order_item`이 본인 주문이고 주문 상태가 `delivered` + `product_id`가 그 주문 상품과 일치.
 - orders / order_items / order_events / product_sizes 의 쓰기, products 수정은 정책이 없으므로 브라우저에서 불가능하다.
@@ -224,8 +249,17 @@ pending ─ 승인 ─> paid ─> preparing ─> shipping ─> delivered ─ 환
 
 시크릿 `TOSS_SECRET_KEY`가 없으면 토스 문서용 공개 테스트 시크릿 키로 동작한다.
 
+`chat` (소스: `supabase/functions/chat/index.ts` + `core.js`, `verify_jwt = false` — 로그인 없이 쓰는 챗봇). 답변 로직 `core.js`는 로컬 서버 `tools/dev-server.mjs`와 공용이므로 두 파일을 함께 배포한다. IP 해시 기준 10분당 20회 제한(`chat_requests`).
+
+| 요청 | 하는 일 | 필요한 시크릿 |
+|---|---|---|
+| `{ action: "sync" }` | embedding이 빈 `chat_documents`를 Upstage `embedding-passage`로 채움. 반환: embedded(채운 수) | `UPSTAGE_API_KEY` |
+| `{ messages: [{ role, content }] }` | 최근 사용자 질문 2개를 `embedding-query`로 임베딩 → `match_chat_documents` 상위 6개 → 실시간 상품 목록(가격·사이즈별 재고·평점)과 함께 OpenAI 답변. 반환: answer, sources | `UPSTAGE_API_KEY`, `OPENAI_API_KEY`(선택 `OPENAI_MODEL`, 기본 `gpt-5.4-mini`) |
+
+현재 Supabase 시크릿에는 Upstage 키만 있어 `sync`만 동작한다. 질문 답변은 로컬 서버가 `.env` 키로 처리한다.
+
 ## 8. 운영 메모
 
 - 배송 상태 변경: Table Editor에서 `orders.status`를 `preparing` → `shipping` → `delivered`로 바꾼다. 환불 요청(`refund_requested`) 건의 실제 카드 환불은 토스페이먼츠 상점 관리자에서 처리한 뒤 `cancel_order_db`로 재고를 복원한다.
-- 마이그레이션 이력: `init_schema` → `seed_products` → `order_functions` → `like_count_column` → `fk_indexes` → `product_images_bucket`.
+- 마이그레이션 이력: `init_schema` → `seed_products` → `order_functions` → `like_count_column` → `fk_indexes` → `product_images_bucket` → `chatbot_vector_store` → `chat_match_public`.
 - 보안 점검(`get_advisors`) 결과: 남은 경고는 "유출 비밀번호 보호 비활성" 1건(대시보드 설정).

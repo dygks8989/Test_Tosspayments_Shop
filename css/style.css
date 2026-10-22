@@ -391,3 +391,40 @@ ul.seo-top { list-style: disc; }
 .doc h2 { font-size: 18px; font-weight: 800; margin: 28px 0 10px; }
 .doc p, .doc li { font-size: 13px; line-height: 1.8; color: var(--gray-700); }
 .doc ul { list-style: disc; padding-left: 18px; }
+
+/* ============ 쇼핑 도우미 챗봇 ============ */
+.chat-fab {
+  position: fixed; right: 20px; bottom: 20px; z-index: 90; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--black); color: var(--white); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.chat-panel {
+  position: fixed; right: 20px; bottom: 88px; z-index: 95; width: 370px; height: min(560px, calc(100vh - 120px));
+  background: var(--white); border: 1px solid var(--black); display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+.chat-panel[hidden] { display: none; }
+.chat-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--black); color: var(--white); }
+.chat-head strong { display: block; font-size: 14px; }
+.chat-head span { font-size: 11px; color: var(--gray-300); }
+.chat-head button { color: var(--white); font-size: 22px; }
+.chat-log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--gray-100); }
+.chat-msg { max-width: 85%; padding: 9px 12px; font-size: 13px; line-height: 1.6; word-break: break-word; background: var(--white); border: 1px solid var(--gray-200); align-self: flex-start; }
+.chat-msg.me { align-self: flex-end; background: var(--black); color: var(--white); border-color: var(--black); }
+.chat-msg.error { color: var(--red); }
+.chat-msg a { text-decoration: underline; text-underline-offset: 2px; font-weight: 700; }
+.chat-src { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--gray-200); display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; }
+.chat-src a { font-weight: 400; color: var(--gray-700); }
+.chat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-chips button { font-size: 12px; padding: 6px 10px; border: 1px solid var(--gray-300); background: var(--white); border-radius: 16px; }
+.chat-msg.typing { display: flex; gap: 4px; padding: 12px; }
+.chat-msg.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-500); animation: chat-dot 1s infinite; }
+.chat-msg.typing i:nth-child(2) { animation-delay: .15s; }
+.chat-msg.typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes chat-dot { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+.chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--gray-200); }
+.chat-form input { flex: 1; min-width: 0; height: 40px; border: 1px solid var(--gray-300); padding: 0 10px; font-size: 13px; }
+.chat-form .btn { height: 40px; padding: 0 14px; }
+.chat-note { font-size: 10px; color: var(--gray-500); padding: 0 10px 8px; }
+@media (max-width: 600px) {
+  .chat-fab { right: 16px; bottom: 16px; }
+  .chat-panel { right: 0; left: 0; bottom: 0; width: 100%; height: min(80vh, 600px); }
+}

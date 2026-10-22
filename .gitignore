@@ -8,6 +8,10 @@ node_modules/
 .claude/*
 !.claude/launch.json
 
+# Local env (secrets)
+.env
+.env.*
+
 # Vercel
 .vercel/
 .vercel-tools/

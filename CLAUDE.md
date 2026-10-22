@@ -11,12 +11,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 빌드·린트·테스트 도구는 없다. 결제위젯은 `file://`에서 동작하지 않으므로 반드시 http 서버로 연다.
 
 ```bash
-powershell -ExecutionPolicy Bypass -File serve.ps1   # http://localhost:5500 (PORT 환경변수로 변경 가능)
-python -m http.server 5500
-npx serve -l 5500
+node tools/dev-server.mjs                            # 정적 파일 + 챗봇 /api/chat (키는 .env), http://localhost:5500
+powershell -ExecutionPolicy Bypass -File serve.ps1   # 정적 파일만 (PORT 환경변수로 변경 가능)
 ```
 
-`.claude/launch.json`의 `shop` 설정이 `serve.ps1`을 실행한다. `serve.ps1`은 HEAD 요청에 본문을 쓰면 안 된다(이전에 Content-Length 오류로 서버가 죽었음).
+`.claude/launch.json`의 `shop`은 `tools/dev-server.mjs`, `shop-static`은 `serve.ps1`을 실행한다. 챗봇은 `dev-server.mjs`에서만 답한다. `serve.ps1`은 HEAD 요청에 본문을 쓰면 안 된다(이전에 Content-Length 오류로 서버가 죽었음).
+
+`.env`(gitignore)는 로컬 전용이다: `OPENAI_API`, `OPENAI_MODEL`, `UPSTAGE_API_KEY`(챗봇), `SITE_URL`·`NAVER_VERIFICATION`(SEO 생성기). Supabase Edge Function은 `.env`를 읽지 못한다. Edge Function 시크릿은 대시보드에서만 설정한다. `.env`를 `supabase secrets set --env-file`로 통째로 올리지 않는다(빈 `TOSS_SECRET_KEY=`가 올라가면 결제가 깨진다).
 
 ## 아키텍처
 
@@ -25,7 +26,7 @@ npx serve -l 5500
 
 1. supabase-js(CDN) → `js/supabase.js` — `sb` 클라이언트(publishable 키), `callOrders()`(주문/결제 Edge Function 호출)
 2. `js/products.js` — `CATEGORIES`, `PRODUCTS`(빈 배열, `loadProducts()`가 DB에서 채움), `DETAILS`, `productImg()`, `findProduct()`
-3. `js/common.js` — `Auth`(Supabase Auth), `requireLogin()`/`nextTarget()`, `Cart`/`Likes`(DB 저장 + 메모리 캐시), `App.ready`/`boot()`, `goCheckout()`, `productCard()`, `renderHeader()`/`renderFooter()`, 장바구니 드로어, `toast()`, `esc()`
+3. `js/common.js` — `Auth`(Supabase Auth), `requireLogin()`/`nextTarget()`, `Cart`/`Likes`(DB 저장 + 메모리 캐시), `App.ready`/`boot()`, `goCheckout()`, `productCard()`, `renderHeader()`/`renderFooter()`, 장바구니 드로어, 챗봇 위젯(`renderChat()`, `renderFooter()`가 호출), `toast()`, `esc()`
 4. 페이지 전용 스크립트 — `shop.js`, `product.js`, `checkout.js`, `mypage.js`. login/signup/success/fail은 인라인 스크립트.
 
 모든 페이지 스크립트는 `boot(main)` 안에서 시작한다. `App.ready`(로그인 상태·상품·장바구니·좋아요 로딩)가 끝난 뒤 `main`이 실행되므로 그 안에서는 `PRODUCTS`/`Cart.get()`/`Likes.has()`를 동기로 써도 된다. 서버 쓰기(`Cart.add`, `Likes.toggle` 등)는 async이고 실패하면 throw하므로 `attempt()`로 감싼다.
@@ -41,7 +42,7 @@ npx serve -l 5500
 ### 상태 저장 (Supabase, 프로젝트 `wearhouse` / ref `hgtuzlcknccfuycewpia`, 서울)
 회원·상품·재고·장바구니·좋아요·주문·리뷰는 모두 Supabase DB에 있다. 테이블은 `profiles`, `products`, `product_sizes`(재고), `cart_items`, `likes`, `orders`, `order_items`(주문 당시 가격·이름 스냅샷), `order_events`(상태 기록), `reviews`. 모든 테이블에 RLS가 켜져 있고, 주문·재고·결제 관련 쓰기는 브라우저에서 불가능하다(읽기만 본인 것에 한해 허용).
 
-- 브라우저에 남는 것은 `ws_checkout`(sessionStorage: 결제할 상품 목록·장바구니 결제 여부)뿐이다.
+- 브라우저에 남는 것은 `ws_checkout`(sessionStorage: 결제할 상품 목록·장바구니 결제 여부)과 `ws_chat`(sessionStorage: 챗봇 대화 최근 20개)뿐이다.
 - 주문 상태: pending → paid → preparing → shipping → delivered, 그 외 cancelled / refund_requested / refunded / failed / expired. 배송 상태(preparing/shipping/delivered)는 관리자 페이지가 없어 Supabase 화면에서 `orders.status`를 직접 바꾼다(delivered로 바꾸면 `delivered_at`과 상태 기록이 자동 생성).
 - DB 함수 `finalize_order`(재고 차감+결제완료, 중복 호출 안전), `cancel_order_db`(재고 복원), `request_refund_db`, `expire_pending_orders`(pg_cron 10분마다, 1시간 지난 pending을 expired로)는 service role 전용이다.
 - 리뷰 작성자 이름(김*수)은 트리거가 서버에서 채운다. 사진은 Storage 버킷 `review-photos`(공개 읽기, 본인 폴더만 업로드).
@@ -66,6 +67,14 @@ npx serve -l 5500
 - `js/checkout.js`의 `TOSS_CLIENT_KEY`는 토스 문서용 공개 테스트 키(`test_gck_docs_...`)다.
 - 결제창은 팝업이라 Claude 앱 내장 브라우저에서는 열리지 않는다. 끝까지 테스트하려면 실제 Chrome을 쓴다. 승인 이후 단계는 SQL로 `finalize_order` 등을 호출해 검증할 수 있다.
 - URL 파라미터·DB 값을 화면에 출력할 때는 반드시 `esc()`를 거친다.
+
+### 쇼핑 도우미 챗봇 (RAG)
+질문 → Upstage `embedding-query`(4096차원) → Supabase pgvector `match_chat_documents`(상위 6개) → 실시간 상품 목록(가격·사이즈별 재고·평점)과 함께 OpenAI가 답변. 테이블·함수 상세는 `DB_SCHEMA.md`.
+- 답변 로직은 `supabase/functions/chat/core.js` 하나다. 로컬 서버 `tools/dev-server.mjs`(키: `.env`, DB는 publishable 키로 읽기만)와 Edge Function `chat`(키: Supabase 시크릿)이 같이 쓴다. Edge Function을 다시 배포할 때는 `index.ts`와 `core.js`를 함께 올린다.
+- 화면: localhost면 `/api/chat`을 부른다. 배포 사이트는 Supabase 시크릿에 OpenAI 키가 없어서 `js/common.js`의 `CHAT_REMOTE = false`로 버튼을 숨긴다. 시크릿을 넣으면 `true`로 바꾼다. 결제 화면(checkout/success/fail)에는 띄우지 않는다.
+- 답변 HTML은 `chatFormat()`이 이스케이프한 뒤 사이트 내부 링크(`product-T001.html` 등)·굵게·줄바꿈만 허용한다.
+- 검색 문서 갱신: 상품·FAQ 문구가 바뀌면 `node tools/seo-build.mjs` → `node tools/chat-docs.mjs`(`supabase/chat-docs.sql` 생성) → 그 SQL을 실행(MCP `execute_sql` 또는 SQL 편집기) → Edge Function `chat`에 `{"action":"sync"}` POST(바뀐 문서만 Upstage로 임베딩, Supabase에 Upstage 키가 있어 동작). 가격·재고는 문서에 넣지 않고 답변할 때 DB에서 읽으므로 가격만 바뀐 경우는 갱신이 필요 없다.
+- Git Bash의 curl은 한글 요청 본문을 CP949로 깨뜨린다. 챗봇 API는 브라우저나 node `fetch`로 테스트한다.
 
 ## Supabase 연동 규칙
 
@@ -92,6 +101,13 @@ npx serve -l 5500
   ```bash
   powershell -ExecutionPolicy Bypass -File .\.vercel-tools\vercel.ps1 deploy --prod
   ```
+
+## 홍보영상 (`promo/`)
+
+- `promo/*.html`은 `window.seek(초)`/`window.ready`를 제공하는 애니메이션 원본이다. 렌더링 도구는 저장소에 없으므로 임시 폴더에 `puppeteer-core`와 `ffmpeg-static`을 설치하고, 프레임별 스크린샷을 ffmpeg로 묶는다.
+- npm이 설치 스크립트를 막아 ffmpeg 바이너리가 안 받아지면 `npm install-scripts approve ffmpeg-static` 후 `npm rebuild ffmpeg-static`을 실행한다.
+- 영상 문구도 데모 쇼핑몰 고지를 유지하고, 사이트 정책을 넘는 약속(도착일 등)은 하지 않는다.
+- `promo/`를 커밋하면 Vercel에 함께 배포된다. mp4(20~30MB)를 커밋할지는 먼저 묻는다.
 
 ## 저장소
 

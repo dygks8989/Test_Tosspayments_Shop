@@ -3,6 +3,12 @@
   "configurations": [
     {
       "name": "shop",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["tools/dev-server.mjs"],
+      "port": 5500
+    },
+    {
+      "name": "shop-static",
       "runtimeExecutable": "powershell",
       "runtimeArgs": ["-ExecutionPolicy", "Bypass", "-File", "serve.ps1"],
       "port": 5500
